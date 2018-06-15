@@ -43,6 +43,7 @@ func main() {
 	router.GET("/instagram/:username/first.jpg", func(c *gin.Context) {
 		u, err := getLatestPicture(i, c.Param("username"))
 		if err != nil {
+			fmt.Println(err)
 			c.Status(http.StatusInternalServerError)
 			return
 		}
