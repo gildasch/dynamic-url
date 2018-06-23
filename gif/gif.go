@@ -21,6 +21,14 @@ var floydSteinberg = colorquant.Dither{
 	},
 }
 
+var sierra2 = colorquant.Dither{
+	[][]float32{
+		[]float32{0.0, 0.0, 0.0, 4.0 / 16.0, 3.0 / 16.0},
+		[]float32{1.0 / 16.0, 2.0 / 16.0, 3.0 / 16.0, 2.0 / 16.0, 1.0 / 16.0},
+		[]float32{0.0, 0.0, 0.0, 0.0, 0.0},
+	},
+}
+
 func MakeGIFFromURLs(urls []string) ([]byte, error) {
 	start := time.Now()
 	subImages, err := fetchImages(urls)
@@ -44,7 +52,7 @@ func MakeGIFFromURLs(urls []string) ([]byte, error) {
 	outGif := &gif.GIF{}
 	for _, simage := range subImages {
 		startQuant := time.Now()
-		palettedImage := floydSteinberg.Quantize(simage, image.NewPaletted(bounds, palette.WebSafe), 256, true, true)
+		palettedImage := sierra2.Quantize(simage, image.NewPaletted(bounds, palette.WebSafe), 256, true, true)
 		fmt.Println("floydSteinberg.Quantize:", time.Since(startQuant))
 
 		// Add new frame to animated GIF
