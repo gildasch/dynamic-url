@@ -7,6 +7,7 @@ import (
 	"image/color/palette"
 	"time"
 
+	"github.com/andybons/gogif"
 	"github.com/esimov/colorquant"
 )
 
@@ -44,4 +45,17 @@ func (Sierra2) Convert(src image.Image, bounds image.Rectangle, p color.Palette)
 	fmt.Println("Sierra2.Quantize:", time.Since(startQuant))
 
 	return palettedImage.(*image.Paletted)
+}
+
+type MedianCut struct{}
+
+func (MedianCut) Convert(src image.Image, bounds image.Rectangle, p color.Palette) *image.Paletted {
+	palettedImage := image.NewPaletted(bounds, nil)
+
+	start := time.Now()
+	quantizer := gogif.MedianCutQuantizer{NumColor: 256}
+	quantizer.Quantize(palettedImage, bounds, src, image.ZP)
+	fmt.Println("MedianCutQuantizer:", time.Since(start))
+
+	return palettedImage
 }
