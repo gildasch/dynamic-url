@@ -4,14 +4,22 @@ import (
 	"bytes"
 	"fmt"
 	"image"
-	"image/color"
+	"image/color/palette"
 	"image/gif"
 	"image/jpeg"
 	"net/http"
 	"time"
 
-	"github.com/andybons/gogif"
+	"github.com/esimov/colorquant"
 )
+
+var floydSteinberg = colorquant.Dither{
+	[][]float32{
+		[]float32{0.0, 0.0, 0.0, 7.0 / 48.0, 5.0 / 48.0},
+		[]float32{3.0 / 48.0, 5.0 / 48.0, 7.0 / 48.0, 5.0 / 48.0, 3.0 / 48.0},
+		[]float32{1.0 / 48.0, 3.0 / 48.0, 5.0 / 48.0, 3.0 / 48.0, 1.0 / 48.0},
+	},
+}
 
 func MakeGIFFromURLs(urls []string) ([]byte, error) {
 	start := time.Now()
@@ -34,28 +42,13 @@ func MakeGIFFromURLs(urls []string) ([]byte, error) {
 	bounds := image.Rect(0, 0, width, height)
 
 	outGif := &gif.GIF{}
-	var palette color.Palette
 	for _, simage := range subImages {
-		// simage, err := cutter.Crop(simage, cutter.Config{
-		// 	Width:  250,
-		// 	Height: 250,
-		// 	Mode:   cutter.Centered,
-		// })
-		// if err != nil {
-		// 	return nil, err
-		// }
-
-		palettedImage := image.NewPaletted(bounds, palette)
-		if palette == nil {
-			startQuant := time.Now()
-			quantizer := gogif.MedianCutQuantizer{NumColor: 64}
-			quantizer.Quantize(palettedImage, bounds, simage, image.ZP)
-			fmt.Println("Quantize:", time.Since(startQuant))
-			palette = palettedImage.Palette
-		}
+		startQuant := time.Now()
+		palettedImage := floydSteinberg.Quantize(simage, image.NewPaletted(bounds, palette.WebSafe), 256, true, true)
+		fmt.Println("floydSteinberg.Quantize:", time.Since(startQuant))
 
 		// Add new frame to animated GIF
-		outGif.Image = append(outGif.Image, palettedImage)
+		outGif.Image = append(outGif.Image, palettedImage.(*image.Paletted))
 		outGif.Delay = append(outGif.Delay, 100)
 	}
 	fmt.Println("appends:", time.Since(start))
