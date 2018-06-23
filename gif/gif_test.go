@@ -16,9 +16,24 @@ var testURLs = []string{
 }
 
 func TestGIFFromURLs(t *testing.T) {
-	b, err := MakeGIFFromURLs(testURLs)
+	b, err := MakeGIFFromURLs(testURLs, Sierra2{})
 	require.NoError(t, err)
 
 	err = ioutil.WriteFile("out.gif", b, 0644)
 	require.NoError(t, err)
+}
+
+func TestQualityOfConverters(t *testing.T) {
+	b, err := MakeGIFFromURLs(testURLs, FloydSteinberg{})
+	require.NoError(t, err)
+
+	err = ioutil.WriteFile("FloydSteinberg.gif", b, 0644)
+	require.NoError(t, err)
+
+	b, err = MakeGIFFromURLs(testURLs, Sierra2{})
+	require.NoError(t, err)
+
+	err = ioutil.WriteFile("sierra2.gif", b, 0644)
+	require.NoError(t, err)
+
 }

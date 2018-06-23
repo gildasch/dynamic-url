@@ -4,32 +4,18 @@ import (
 	"bytes"
 	"fmt"
 	"image"
-	"image/color/palette"
+	"image/color"
 	"image/gif"
 	"image/jpeg"
 	"net/http"
 	"time"
-
-	"github.com/esimov/colorquant"
 )
 
-var floydSteinberg = colorquant.Dither{
-	[][]float32{
-		[]float32{0.0, 0.0, 0.0, 7.0 / 48.0, 5.0 / 48.0},
-		[]float32{3.0 / 48.0, 5.0 / 48.0, 7.0 / 48.0, 5.0 / 48.0, 3.0 / 48.0},
-		[]float32{1.0 / 48.0, 3.0 / 48.0, 5.0 / 48.0, 3.0 / 48.0, 1.0 / 48.0},
-	},
+type Converter interface {
+	Convert(src image.Image, bounds image.Rectangle, p color.Palette) *image.Paletted
 }
 
-var sierra2 = colorquant.Dither{
-	[][]float32{
-		[]float32{0.0, 0.0, 0.0, 4.0 / 16.0, 3.0 / 16.0},
-		[]float32{1.0 / 16.0, 2.0 / 16.0, 3.0 / 16.0, 2.0 / 16.0, 1.0 / 16.0},
-		[]float32{0.0, 0.0, 0.0, 0.0, 0.0},
-	},
-}
-
-func MakeGIFFromURLs(urls []string) ([]byte, error) {
+func MakeGIFFromURLs(urls []string, converter Converter) ([]byte, error) {
 	start := time.Now()
 	subImages, err := fetchImages(urls)
 	fmt.Println("fetchImages:", time.Since(start))
@@ -51,12 +37,8 @@ func MakeGIFFromURLs(urls []string) ([]byte, error) {
 
 	outGif := &gif.GIF{}
 	for _, simage := range subImages {
-		startQuant := time.Now()
-		palettedImage := sierra2.Quantize(simage, image.NewPaletted(bounds, palette.WebSafe), 256, true, true)
-		fmt.Println("floydSteinberg.Quantize:", time.Since(startQuant))
-
 		// Add new frame to animated GIF
-		outGif.Image = append(outGif.Image, palettedImage.(*image.Paletted))
+		outGif.Image = append(outGif.Image, converter.Convert(simage, bounds, nil))
 		outGif.Delay = append(outGif.Delay, 100)
 	}
 	fmt.Println("appends:", time.Since(start))
