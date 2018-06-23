@@ -9,36 +9,51 @@ import (
 	"image/jpeg"
 	"net/http"
 	"time"
+
+	"github.com/nfnt/resize"
+	"github.com/oliamb/cutter"
 )
 
 type Converter interface {
 	Convert(src image.Image, bounds image.Rectangle, p color.Palette) *image.Paletted
 }
 
+const (
+	width  = 240
+	height = 240
+)
+
 func MakeGIFFromURLs(urls []string, converter Converter) ([]byte, error) {
 	start := time.Now()
-	subImages, err := fetchImages(urls)
+	fetched, err := fetchImages(urls)
 	fmt.Println("fetchImages:", time.Since(start))
 	if err != nil {
 		return nil, err
 	}
 
 	start = time.Now()
-	width, height := -1, -1
-	for _, i := range subImages {
-		if width == -1 || width > i.Bounds().Dx() {
-			width = i.Bounds().Dx()
+	var normalized []image.Image
+	for _, f := range fetched {
+		cropped, err := cutter.Crop(f, cutter.Config{
+			Width:   1,
+			Height:  1,
+			Mode:    cutter.Centered,
+			Options: cutter.Ratio,
+		})
+		if err != nil {
+			return nil, err
 		}
-		if height == -1 || height > i.Bounds().Dy() {
-			height = i.Bounds().Dy()
-		}
+
+		resized := resize.Resize(width, height, cropped, resize.Bilinear)
+
+		normalized = append(normalized, resized)
 	}
 	bounds := image.Rect(0, 0, width, height)
 
 	outGif := &gif.GIF{}
-	for _, simage := range subImages {
+	for _, n := range normalized {
 		// Add new frame to animated GIF
-		outGif.Image = append(outGif.Image, converter.Convert(simage, bounds, nil))
+		outGif.Image = append(outGif.Image, converter.Convert(n, bounds, nil))
 		outGif.Delay = append(outGif.Delay, 100)
 	}
 	fmt.Println("appends:", time.Since(start))
