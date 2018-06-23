@@ -34,7 +34,15 @@ func MakeGIFFromURLs(urls []string, converter Converter) ([]byte, error) {
 	start = time.Now()
 	var normalized []image.Image
 	for _, f := range fetched {
-		cropped, err := cutter.Crop(f, cutter.Config{
+		maxWidth, maxHeight := uint(0), uint(0)
+		if f.Bounds().Dx() > f.Bounds().Dy() {
+			maxWidth = width
+		} else {
+			maxHeight = height
+		}
+		resized := resize.Resize(maxWidth, maxHeight, f, resize.Bilinear)
+
+		cropped, err := cutter.Crop(resized, cutter.Config{
 			Width:   1,
 			Height:  1,
 			Mode:    cutter.Centered,
@@ -44,9 +52,7 @@ func MakeGIFFromURLs(urls []string, converter Converter) ([]byte, error) {
 			return nil, err
 		}
 
-		resized := resize.Resize(width, height, cropped, resize.Bilinear)
-
-		normalized = append(normalized, resized)
+		normalized = append(normalized, cropped)
 	}
 	bounds := image.Rect(0, 0, width, height)
 
