@@ -24,7 +24,13 @@ func TestGIFFromURLs(t *testing.T) {
 }
 
 func TestQualityOfConverters(t *testing.T) {
-	b, err := MakeGIFFromURLs(testURLs, MedianCut{})
+	b, err := MakeGIFFromURLs(testURLs, StandardQuantizer{})
+	require.NoError(t, err)
+
+	err = ioutil.WriteFile("StandardQuantizer.gif", b, 0644)
+	require.NoError(t, err)
+
+	b, err = MakeGIFFromURLs(testURLs, MedianCut{})
 	require.NoError(t, err)
 
 	err = ioutil.WriteFile("MedianCut.gif", b, 0644)

@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/color"
 	"image/color/palette"
+	"image/draw"
 	"time"
 
 	"github.com/andybons/gogif"
@@ -56,6 +57,18 @@ func (MedianCut) Convert(src image.Image, bounds image.Rectangle, p color.Palett
 	quantizer := gogif.MedianCutQuantizer{NumColor: 256}
 	quantizer.Quantize(palettedImage, bounds, src, image.ZP)
 	fmt.Println("MedianCutQuantizer:", time.Since(start))
+
+	return palettedImage
+}
+
+type StandardQuantizer struct{}
+
+func (StandardQuantizer) Convert(src image.Image, bounds image.Rectangle, p color.Palette) *image.Paletted {
+	start := time.Now()
+	palettedImage := image.NewPaletted(bounds, palette.Plan9[:256])
+	// palettedImage.Palette = .Quantizer.Quantize(make(color.Palette, 0, 256), m)
+	draw.FloydSteinberg.Draw(palettedImage, bounds, src, image.ZP)
+	fmt.Println("StandardQuantizer:", time.Since(start))
 
 	return palettedImage
 }
