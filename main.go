@@ -116,7 +116,7 @@ func main() {
 			return
 		}
 
-		gif, err := gif.MakeGIFFromURLs(urls)
+		gif, err := gif.MakeGIFFromURLs(urls, gif.MedianCut{})
 		if err != nil {
 			fmt.Println(err)
 			c.Status(http.StatusInternalServerError)
