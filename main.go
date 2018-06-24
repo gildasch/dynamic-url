@@ -106,6 +106,7 @@ func instagramHandler(insta *instagram.Client, search string, format string) fun
 			}
 
 			c.Data(http.StatusOK, "image/gif", gif)
+			return
 		default:
 		}
 
@@ -150,7 +151,7 @@ func movieHandler(ms []movies.Movie, format string) func(c *gin.Context) {
 			}
 
 			c.Data(http.StatusOK, "image/jpeg", buf.Bytes())
-
+			return
 		case "gif":
 			frames := movie.Frames(at, 20)
 			var withCaption []image.Image
@@ -171,6 +172,7 @@ func movieHandler(ms []movies.Movie, format string) func(c *gin.Context) {
 			}
 
 			c.Data(http.StatusOK, "image/gif", gif)
+			return
 		}
 
 		c.Status(http.StatusBadRequest)
