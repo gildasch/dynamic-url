@@ -7,6 +7,7 @@ import (
 	"image"
 	"image/jpeg"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gildasch/dynamic-url/instagram"
@@ -141,9 +142,16 @@ func movieHandler(ms []movies.Movie, format string) func(c *gin.Context) {
 			return
 		}
 
+		var caption string
+		if c.Query("text") != "" {
+			caption = c.Query("text")
+		} else {
+			caption = movie.Caption(at)
+		}
+
 		switch format {
 		case "jpg":
-			jpg := utils.WithCaption(movie.Frame(at), movie.Caption(at))
+			jpg := utils.WithCaption(movie.Frame(at), caption)
 			var buf bytes.Buffer
 			err = jpeg.Encode(&buf, jpg, nil)
 			if err != nil {
@@ -154,10 +162,18 @@ func movieHandler(ms []movies.Movie, format string) func(c *gin.Context) {
 			c.Data(http.StatusOK, "image/jpeg", buf.Bytes())
 			return
 		case "gif":
-			frames := movie.Frames(at, 20)
+			nframes := 20
+			if c.Query("frames") != "" {
+				i, err := strconv.Atoi(c.Query("frames"))
+				if err == nil && nframes <= 100 {
+					nframes = i
+				}
+			}
+
+			frames := movie.Frames(at, nframes)
 			var withCaption []image.Image
 			for _, f := range frames {
-				withCaption = append(withCaption, utils.WithCaption(f, movie.Caption(at)))
+				withCaption = append(withCaption, utils.WithCaption(f, caption))
 			}
 
 			var convert gif.Converter = gif.StandardQuantizer{}
