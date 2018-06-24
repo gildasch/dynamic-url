@@ -19,6 +19,8 @@ import (
 
 func main() {
 	instagramLoginPtr := flag.Bool("instagram-login", false, "log-in to instagram and export connection file")
+	lcaMovie := flag.String("lca-movie", "", "path to the movie file of lca")
+	lcaScript := flag.String("lca-script", "", "path to the script file of lca")
 	flag.Parse()
 
 	insta, err := instagram.NewClient(".goinsta", *instagramLoginPtr)
@@ -36,13 +38,13 @@ func main() {
 
 	var ms []movies.Movie
 
-	script, err := script.NewScript("/home/gildas/dev/lca/script.json", 10*time.Second)
+	script, err := script.NewScript(*lcaScript, 10*time.Second)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	lca, err := movies.NewLocal("lca", "~/dev/lca/lca.mkv", script, 1024/2, 576/2)
+	lca, err := movies.NewLocal("lca", *lcaMovie, script, 1024/2, 576/2)
 	if err != nil {
 		fmt.Println(err)
 		return
