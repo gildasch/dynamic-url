@@ -17,7 +17,7 @@ import (
 )
 
 func main() {
-	instagramLoginPtr := flag.Bool("instagram-login", false, "log-in to instagram and export connexion file")
+	instagramLoginPtr := flag.Bool("instagram-login", false, "log-in to instagram and export connection file")
 	flag.Parse()
 
 	insta, err := instagram.NewClient(".goinsta", *instagramLoginPtr)
