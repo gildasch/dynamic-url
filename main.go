@@ -99,6 +99,30 @@ func main() {
 		c.Redirect(http.StatusFound, oneOf(urls))
 	})
 
+	router.GET("/instagram/user/:username/10.gif", func(c *gin.Context) {
+		urls, err := getLatestPicturesFromUser(i, c.Param("username"), 10)
+		if err != nil {
+			fmt.Println(err)
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
+		delay, err := time.ParseDuration(c.DefaultQuery("delay", "1s"))
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return
+		}
+
+		gif, err := gif.MakeGIFFromURLs(urls, delay, gif.MedianCut{})
+		if err != nil {
+			fmt.Println(err)
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
+		c.Data(http.StatusOK, "image/gif", gif)
+	})
+
 	router.GET("/instagram/tag/:tag/10.jpg", func(c *gin.Context) {
 		urls, err := getLatestPicturesFromTag(i, c.Param("tag"), 100, 1920, 1920)
 		if err != nil {
