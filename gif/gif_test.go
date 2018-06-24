@@ -1,10 +1,14 @@
 package gif
 
 import (
+	"image"
+	"image/jpeg"
 	"io/ioutil"
+	"os"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -47,5 +51,24 @@ func TestQualityOfConverters(t *testing.T) {
 	require.NoError(t, err)
 
 	err = ioutil.WriteFile("sierra2.gif", b, 0644)
+	require.NoError(t, err)
+}
+
+func TestNormalize(t *testing.T) {
+	testImageURL := "https://scontent-bru2-1.cdninstagram.com/vp/7ee2bace61230508a4d950c53e15a86e/5BADA232/t51.2885-15/s1080x1080/e15/fr/36113610_406378963192198_3380007153052942336_n.jpg?ig_cache_key=MTgwNjczMzAyMDYyMDU2Mjc2MA%3D%3D.2"
+
+	imgs, err := fetchImages([]string{testImageURL})
+	require.NoError(t, err)
+	require.Len(t, imgs, 1)
+
+	in := imgs[0]
+
+	out, err := normalize(in, 240, 240)
+	assert.Equal(t, image.Rect(0, 0, 240, 240), out.Bounds())
+
+	f, err := os.OpenFile("normalized.gif", os.O_RDWR|os.O_CREATE, 0644)
+	require.NoError(t, err)
+
+	err = jpeg.Encode(f, out, nil)
 	require.NoError(t, err)
 }
