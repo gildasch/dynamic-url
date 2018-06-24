@@ -32,7 +32,21 @@ func Duration(video string) (time.Duration, error) {
 }
 
 func Capture(video string, after time.Duration, width, height int) (image.Image, error) {
-	tmp := "/tmp/" + uuid.NewV4().String() + ".jpg"
+	is, err := Captures(video, after, width, height, 1)
+	if err != nil || len(is) < 1 {
+		return nil, err
+	}
+	return is[0], nil
+}
+
+func Captures(video string, after time.Duration, width, height, n int) ([]image.Image, error) {
+	tmp := "/tmp/" + uuid.NewV4().String() + "-%04d.jpg"
+	fmt.Println("saving", n, tmp)
+	defer func() {
+		for i := 0; i < n; i++ {
+			os.Remove(fmt.Sprintf(tmp, i))
+		}
+	}()
 
 	resolutionFlag := ""
 	if width != 0 || height != 0 {
@@ -40,23 +54,25 @@ func Capture(video string, after time.Duration, width, height int) (image.Image,
 	}
 
 	_, err := execCommand(
-		fmt.Sprintf(`ffmpeg -y -ss %f -i %s -vframes 1 %s %s`, after.Seconds(), video, resolutionFlag, tmp))
-	if err != nil {
-		return nil, err
-	}
-	defer os.Remove(tmp)
-
-	f, err := os.Open(tmp)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	image, err := jpeg.Decode(f)
+		fmt.Sprintf(`ffmpeg -y -ss %f -i %s -vframes %d -r 5 %s %s`, after.Seconds(), video, n, resolutionFlag, tmp))
 	if err != nil {
 		return nil, err
 	}
 
-	return image, nil
+	var images []image.Image
+	for i := 1; i <= n; i++ {
+		f, err := os.Open(fmt.Sprintf(tmp, i))
+		if err != nil {
+			return nil, err
+		}
+		defer f.Close()
+		image, err := jpeg.Decode(f)
+		if err != nil {
+			return nil, err
+		}
+		images = append(images, image)
+	}
+	return images, nil
 }
 
 func execCommand(cmdStr string) (string, error) {

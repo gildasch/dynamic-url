@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"image"
 	"image/jpeg"
 	"net/http"
 	"time"
@@ -34,7 +35,7 @@ func main() {
 
 	var ms []movies.Movie
 
-	lca, err := movies.NewLocal("lca", "~/dev/lca/lca.mkv", "", 1024, 576)
+	lca, err := movies.NewLocal("lca", "~/dev/lca/lca.mkv", "", 1024/2, 576/2)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -42,7 +43,8 @@ func main() {
 
 	ms = append(ms, lca)
 
-	router.GET("/movies/:name/:at/1.jpg", movieHandler(ms))
+	router.GET("/movies/:name/:at/1.jpg", movieHandler(ms, "jpg"))
+	router.GET("/movies/:name/:at/1.gif", movieHandler(ms, "gif"))
 
 	router.Run()
 }
@@ -103,7 +105,7 @@ func instagramHandler(insta *instagram.Client, search string, format string) fun
 	}
 }
 
-func movieHandler(ms []movies.Movie) func(c *gin.Context) {
+func movieHandler(ms []movies.Movie, format string) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		name := c.Param("name")
 
@@ -128,14 +130,40 @@ func movieHandler(ms []movies.Movie) func(c *gin.Context) {
 			return
 		}
 
-		jpg := utils.WithCaption(movie.Frame(at), movie.Caption(at))
-		var buf bytes.Buffer
-		err = jpeg.Encode(&buf, jpg, nil)
-		if err != nil {
-			c.Status(http.StatusInternalServerError)
-			return
+		switch format {
+		case "jpg":
+			jpg := utils.WithCaption(movie.Frame(at), movie.Caption(at))
+			var buf bytes.Buffer
+			err = jpeg.Encode(&buf, jpg, nil)
+			if err != nil {
+				c.Status(http.StatusInternalServerError)
+				return
+			}
+
+			c.Data(http.StatusOK, "image/jpeg", buf.Bytes())
+
+		case "gif":
+			frames := movie.Frames(at, 20)
+			var withCaption []image.Image
+			for _, f := range frames {
+				withCaption = append(withCaption, utils.WithCaption(f, movie.Caption(at)))
+			}
+
+			var convert gif.Converter = gif.StandardQuantizer{}
+			if c.Query("dither") == "true" {
+				convert = gif.FloydSteinberg{}
+			}
+
+			gif, err := gif.MakeGIFFromImages(withCaption, 250*time.Millisecond, convert)
+			if err != nil {
+				fmt.Println(err)
+				c.Status(http.StatusInternalServerError)
+				return
+			}
+
+			c.Data(http.StatusOK, "image/gif", gif)
 		}
 
-		c.Data(http.StatusOK, "image/jpeg", buf.Bytes())
+		c.Status(http.StatusBadRequest)
 	}
 }

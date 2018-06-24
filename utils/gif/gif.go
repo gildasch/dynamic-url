@@ -24,6 +24,27 @@ const (
 	defaultHeight = 240
 )
 
+func MakeGIFFromImages(in []image.Image, delay time.Duration, converter Converter) ([]byte, error) {
+	outGif := &gif.GIF{}
+	start := time.Now()
+	for _, i := range in {
+		// Add new frame to animated GIF
+		outGif.Image = append(outGif.Image, converter.Convert(i, i.Bounds(), nil))
+		outGif.Delay = append(outGif.Delay, int(delay.Seconds()*100)) // delay is in 100th of second
+	}
+	fmt.Println("appends:", time.Since(start))
+
+	var buf bytes.Buffer
+	start = time.Now()
+	err := gif.EncodeAll(&buf, outGif)
+	fmt.Println("gif encode:", time.Since(start))
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
 func MakeGIFFromURLs(urls []string, delay time.Duration, converter Converter) ([]byte, error) {
 	start := time.Now()
 	fetched, err := fetchImages(urls)
@@ -42,24 +63,9 @@ func MakeGIFFromURLs(urls []string, delay time.Duration, converter Converter) ([
 
 		normalized = append(normalized, n)
 	}
+	fmt.Println("normalize:", time.Since(start))
 
-	outGif := &gif.GIF{}
-	for _, n := range normalized {
-		// Add new frame to animated GIF
-		outGif.Image = append(outGif.Image, converter.Convert(n, n.Bounds(), nil))
-		outGif.Delay = append(outGif.Delay, int(delay.Seconds()*100)) // delay is in 100th of second
-	}
-	fmt.Println("appends:", time.Since(start))
-
-	var buf bytes.Buffer
-	start = time.Now()
-	err = gif.EncodeAll(&buf, outGif)
-	fmt.Println("gif encode:", time.Since(start))
-	if err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
+	return MakeGIFFromImages(normalized, delay, converter)
 }
 
 func fetchImages(urls []string) ([]image.Image, error) {
