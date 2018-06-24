@@ -11,6 +11,7 @@ import (
 
 	"github.com/gildasch/dynamic-url/instagram"
 	"github.com/gildasch/dynamic-url/movies"
+	"github.com/gildasch/dynamic-url/script"
 	"github.com/gildasch/dynamic-url/utils"
 	"github.com/gildasch/dynamic-url/utils/gif"
 	"github.com/gin-gonic/gin"
@@ -35,7 +36,13 @@ func main() {
 
 	var ms []movies.Movie
 
-	lca, err := movies.NewLocal("lca", "~/dev/lca/lca.mkv", "", 1024/2, 576/2)
+	script, err := script.NewScript("/home/gildas/dev/lca/script.json", 10*time.Second)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	lca, err := movies.NewLocal("lca", "~/dev/lca/lca.mkv", script, 1024/2, 576/2)
 	if err != nil {
 		fmt.Println(err)
 		return

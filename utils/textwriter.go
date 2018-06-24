@@ -14,7 +14,7 @@ const (
 )
 
 const DefaultFontSize = 70.0
-const MinFontSize = 30
+const MinFontSize = 20
 const FontFamily = "LiberationSans-Regular.ttf"
 const Padding = 15
 const DefaultPos = BOTTOM
