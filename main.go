@@ -52,8 +52,9 @@ func main() {
 
 	ms = append(ms, lca)
 
-	router.GET("/movies/:name/:at/1.jpg", movieHandler(ms, "jpg"))
-	router.GET("/movies/:name/:at/1.gif", movieHandler(ms, "gif"))
+	router.GET("/movies/:name/at/:at/1.jpg", movieHandler(ms, "jpg"))
+	router.GET("/movies/:name/at/:at/1.gif", movieHandler(ms, "gif"))
+	router.GET("/movies/:name/all.html", movieAllHandler(ms, "gif"))
 
 	router.Run()
 }
@@ -176,5 +177,44 @@ func movieHandler(ms []movies.Movie, format string) func(c *gin.Context) {
 		}
 
 		c.Status(http.StatusBadRequest)
+	}
+}
+
+func movieAllHandler(ms []movies.Movie, format string) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		name := c.Param("name")
+
+		var movie movies.Movie
+		for _, m := range ms {
+			if m.Name() == name {
+				movie = m
+				break
+			}
+		}
+
+		if movie == nil {
+			fmt.Println("movie not found")
+			c.Status(http.StatusBadRequest)
+			return
+		}
+
+		c.Status(http.StatusOK)
+		fmt.Fprintf(c.Writer, "<table>")
+		for i := 0 * time.Second; i < movie.Duration(); i += 10 * time.Second {
+			fmt.Fprintf(c.Writer, `
+<tr>
+  <td>
+    <img src='/movies/%s/at/%s/1.jpg' style='max-width:240px' />
+  </td>
+  <td>
+    <a href='/movies/%s/at/%s/1.jpg'>JPEG</a>
+  </td>
+  <td>
+    <a href='/movies/%s/at/%s/1.gif'>GIF</a>
+  </td>
+</tr>`,
+				name, i, name, i, name, i)
+		}
+		fmt.Fprintf(c.Writer, "</table>")
 	}
 }
