@@ -113,7 +113,12 @@ func main() {
 			return
 		}
 
-		gif, err := gif.MakeGIFFromURLs(urls, delay, gif.MedianCut{})
+		var convert gif.Converter = gif.MedianCut{}
+		if c.Query("dither") == "true" {
+			convert = gif.FloydSteinberg{}
+		}
+
+		gif, err := gif.MakeGIFFromURLs(urls, delay, convert)
 		if err != nil {
 			fmt.Println(err)
 			c.Status(http.StatusInternalServerError)
@@ -147,7 +152,12 @@ func main() {
 			return
 		}
 
-		gif, err := gif.MakeGIFFromURLs(urls, delay, gif.MedianCut{})
+		var convert gif.Converter = gif.MedianCut{}
+		if c.Query("dither") == "true" {
+			convert = gif.FloydSteinberg{}
+		}
+
+		gif, err := gif.MakeGIFFromURLs(urls, delay, convert)
 		if err != nil {
 			fmt.Println(err)
 			c.Status(http.StatusInternalServerError)
