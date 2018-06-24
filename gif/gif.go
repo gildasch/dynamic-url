@@ -23,7 +23,7 @@ const (
 	height = 240
 )
 
-func MakeGIFFromURLs(urls []string, converter Converter) ([]byte, error) {
+func MakeGIFFromURLs(urls []string, delay time.Duration, converter Converter) ([]byte, error) {
 	start := time.Now()
 	fetched, err := fetchImages(urls)
 	fmt.Println("fetchImages:", time.Since(start))
@@ -60,7 +60,7 @@ func MakeGIFFromURLs(urls []string, converter Converter) ([]byte, error) {
 	for _, n := range normalized {
 		// Add new frame to animated GIF
 		outGif.Image = append(outGif.Image, converter.Convert(n, bounds, nil))
-		outGif.Delay = append(outGif.Delay, 100)
+		outGif.Delay = append(outGif.Delay, int(delay.Seconds()*100)) // delay is in 100th of second
 	}
 	fmt.Println("appends:", time.Since(start))
 

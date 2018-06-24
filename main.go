@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"time"
 
 	"github.com/gildasch/dynamic-url/gif"
 	"github.com/gin-gonic/gin"
@@ -116,7 +117,13 @@ func main() {
 			return
 		}
 
-		gif, err := gif.MakeGIFFromURLs(urls, gif.MedianCut{})
+		delay, err := time.ParseDuration(c.DefaultQuery("delay", "1s"))
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return
+		}
+
+		gif, err := gif.MakeGIFFromURLs(urls, delay, gif.MedianCut{})
 		if err != nil {
 			fmt.Println(err)
 			c.Status(http.StatusInternalServerError)

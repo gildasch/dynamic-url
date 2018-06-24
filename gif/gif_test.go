@@ -3,6 +3,7 @@ package gif
 import (
 	"io/ioutil"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -16,7 +17,7 @@ var testURLs = []string{
 }
 
 func TestGIFFromURLs(t *testing.T) {
-	b, err := MakeGIFFromURLs(testURLs, Sierra2{})
+	b, err := MakeGIFFromURLs(testURLs, time.Second, Sierra2{})
 	require.NoError(t, err)
 
 	err = ioutil.WriteFile("out.gif", b, 0644)
@@ -24,25 +25,25 @@ func TestGIFFromURLs(t *testing.T) {
 }
 
 func TestQualityOfConverters(t *testing.T) {
-	b, err := MakeGIFFromURLs(testURLs, StandardQuantizer{})
+	b, err := MakeGIFFromURLs(testURLs, time.Second, StandardQuantizer{})
 	require.NoError(t, err)
 
 	err = ioutil.WriteFile("StandardQuantizer.gif", b, 0644)
 	require.NoError(t, err)
 
-	b, err = MakeGIFFromURLs(testURLs, MedianCut{})
+	b, err = MakeGIFFromURLs(testURLs, time.Second, MedianCut{})
 	require.NoError(t, err)
 
 	err = ioutil.WriteFile("MedianCut.gif", b, 0644)
 	require.NoError(t, err)
 
-	b, err = MakeGIFFromURLs(testURLs, FloydSteinberg{})
+	b, err = MakeGIFFromURLs(testURLs, time.Second, FloydSteinberg{})
 	require.NoError(t, err)
 
 	err = ioutil.WriteFile("FloydSteinberg.gif", b, 0644)
 	require.NoError(t, err)
 
-	b, err = MakeGIFFromURLs(testURLs, Sierra2{})
+	b, err = MakeGIFFromURLs(testURLs, time.Second, Sierra2{})
 	require.NoError(t, err)
 
 	err = ioutil.WriteFile("sierra2.gif", b, 0644)
