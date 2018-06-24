@@ -5,33 +5,43 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+func TestNewScript(t *testing.T) {
+	s, err := NewScript("script.json", 10*time.Second)
+	require.NoError(t, err)
+	assert.Len(t, s.quotes, 12)
+	assert.Equal(t,
+		"Attention, ce flim n’est pas un flim sur le cyclimse. Merci de votre compréhension.",
+		s.quotes[0].Quote)
+	assert.Equal(t, "1m13s", s.quotes[11].At.String())
+}
 
 func TestAt(t *testing.T) {
 	script := Script{quotes: []Quote{
 		Quote{
-			Time:  time.Date(2000, 1, 1, 11, 22, 33, 0, time.UTC),
+			At:    11*time.Hour + 22*time.Minute + 33*time.Second,
 			Quote: "première"},
 		Quote{
-			Time:  time.Date(2000, 1, 1, 11, 22, 43, 0, time.UTC),
+			At:    11*time.Hour + 22*time.Minute + 43*time.Second,
 			Quote: "deuxième"},
 		Quote{
-			Time:  time.Date(2000, 1, 1, 11, 22, 45, 0, time.UTC),
+			At:    11*time.Hour + 22*time.Minute + 45*time.Second,
 			Quote: "troisième"},
 		Quote{
-			Time:  time.Date(2000, 1, 1, 11, 22, 50, 0, time.UTC),
+			At:    11*time.Hour + 22*time.Minute + 50*time.Second,
 			Quote: "quatrième"},
 		Quote{
-			Time:  time.Date(2000, 1, 1, 11, 23, 33, 0, time.UTC),
-			Quote: "cinquième"},
-	}}
+			At:    11*time.Hour + 23*time.Minute + 33*time.Second,
+			Quote: "cinquième"}}}
 
-	assert.Equal(t, "première", script.At(time.Date(2000, 1, 1, 10, 22, 33, 0, time.UTC)))
-	assert.Equal(t, "première", script.At(time.Date(2000, 1, 1, 11, 22, 37, 59, time.UTC)))
-	assert.Equal(t, "deuxième", script.At(time.Date(2000, 1, 1, 11, 22, 38, 01, time.UTC)))
-	assert.Equal(t, "troisième", script.At(time.Date(2000, 1, 1, 11, 22, 44, 32, time.UTC)))
-	assert.Equal(t, "quatrième", script.At(time.Date(2000, 1, 1, 11, 23, 00, 32, time.UTC)))
-	assert.Equal(t, "cinquième", script.At(time.Date(2000, 1, 1, 11, 23, 20, 00, time.UTC)))
-	assert.Equal(t, "cinquième", script.At(time.Date(2000, 1, 1, 11, 23, 59, 00, time.UTC)))
-	assert.Equal(t, "cinquième", script.At(time.Date(2029, 1, 1, 11, 23, 59, 00, time.UTC)))
+	assert.Equal(t, "première", script.At(10*time.Hour+22*time.Minute+33*time.Second+000*time.Millisecond))
+	assert.Equal(t, "première", script.At(11*time.Hour+22*time.Minute+37*time.Second+590*time.Millisecond))
+	assert.Equal(t, "deuxième", script.At(11*time.Hour+22*time.Minute+38*time.Second+010*time.Millisecond))
+	assert.Equal(t, "troisième", script.At(11*time.Hour+22*time.Minute+44*time.Second+320*time.Millisecond))
+	assert.Equal(t, "quatrième", script.At(11*time.Hour+23*time.Minute+00*time.Second+320*time.Millisecond))
+	assert.Equal(t, "cinquième", script.At(11*time.Hour+23*time.Minute+20*time.Second+000*time.Millisecond))
+	assert.Equal(t, "cinquième", script.At(11*time.Hour+23*time.Minute+59*time.Second+000*time.Millisecond))
+	assert.Equal(t, "cinquième", script.At(11*time.Hour+23*time.Minute+59*time.Second+000*time.Millisecond))
 }
