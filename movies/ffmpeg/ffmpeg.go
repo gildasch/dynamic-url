@@ -33,8 +33,14 @@ func Duration(video string) (time.Duration, error) {
 
 func Capture(video string, after time.Duration, width, height int) (image.Image, error) {
 	tmp := "/tmp/" + uuid.NewV4().String() + ".jpg"
+
+	resolutionFlag := ""
+	if width != 0 || height != 0 {
+		resolutionFlag = fmt.Sprintf("-s %dx%d", width, height)
+	}
+
 	_, err := execCommand(
-		fmt.Sprintf(`ffmpeg -y -ss %f -i %s -vframes 1 -s %dx%d %s`, after.Seconds(), video, width, height, tmp))
+		fmt.Sprintf(`ffmpeg -y -ss %f -i %s -vframes 1 %s %s`, after.Seconds(), video, resolutionFlag, tmp))
 	if err != nil {
 		return nil, err
 	}
