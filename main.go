@@ -1,77 +1,16 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"math/rand"
 	"net/http"
 	"time"
 
 	"github.com/gildasch/dynamic-url/gif"
+	"github.com/gildasch/dynamic-url/instagram"
 	"github.com/gin-gonic/gin"
-	goinsta "gopkg.in/ahmdrz/goinsta.v2"
 )
-
-func getLatestPicturesFromUser(i *goinsta.Instagram, username string, n int) ([]string, error) {
-	user, err := i.Profiles.ByName(username)
-	if err != nil {
-		return nil, err
-	}
-
-	media := user.Feed()
-
-	var urls []string
-
-	for media.Next() {
-		for _, i := range media.Items {
-			if len(i.Images.Versions) == 0 {
-				continue
-			}
-			urls = append(urls, i.Images.Versions[0].URL)
-			if len(urls) == n {
-				return urls, nil
-			}
-		}
-	}
-
-	return urls, nil
-}
-
-func getLatestPicturesFromTag(i *goinsta.Instagram, tag string, n int, maxWidth, maxHeight int) ([]string, error) {
-	feed, err := i.Search.FeedTags(tag)
-	if err != nil {
-		return nil, err
-	}
-
-	var urls []string
-
-	for _, i := range feed.Images {
-		u := best(i.Images, maxWidth, maxHeight)
-		if u == "" {
-			continue
-		}
-		urls = append(urls, u)
-	}
-
-	return urls, nil
-}
-
-func best(images goinsta.Images, maxWidth, maxHeight int) string {
-	fmt.Printf("%#v\n", images)
-
-	if len(images.Versions) == 0 {
-		return ""
-	}
-
-	ret := images.Versions[0].URL
-
-	for _, c := range images.Versions {
-		if c.Width <= maxWidth && c.Height <= maxHeight {
-			return c.URL
-		}
-	}
-
-	return ret
-}
 
 func oneOf(ss []string) string {
 	if len(ss) == 0 {
@@ -82,15 +21,19 @@ func oneOf(ss []string) string {
 }
 
 func main() {
-	i, err := goinsta.Import(".goinsta")
+	instagramLoginPtr := flag.Bool("instagram-login", false, "log-in to instagram and export connexion file")
+	flag.Parse()
+
+	insta, err := instagram.NewClient(".goinsta", *instagramLoginPtr)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
 	router := gin.Default()
+
 	router.GET("/instagram/user/:username/10.jpg", func(c *gin.Context) {
-		urls, err := getLatestPicturesFromUser(i, c.Param("username"), 10)
+		urls, err := insta.GetLatestPicturesFromUser(c.Param("username"), 10)
 		if err != nil {
 			fmt.Println(err)
 			c.Status(http.StatusInternalServerError)
@@ -100,7 +43,7 @@ func main() {
 	})
 
 	router.GET("/instagram/user/:username/10.gif", func(c *gin.Context) {
-		urls, err := getLatestPicturesFromUser(i, c.Param("username"), 10)
+		urls, err := insta.GetLatestPicturesFromUser(c.Param("username"), 10)
 		if err != nil {
 			fmt.Println(err)
 			c.Status(http.StatusInternalServerError)
@@ -129,7 +72,7 @@ func main() {
 	})
 
 	router.GET("/instagram/tag/:tag/10.jpg", func(c *gin.Context) {
-		urls, err := getLatestPicturesFromTag(i, c.Param("tag"), 100, 1920, 1920)
+		urls, err := insta.GetLatestPicturesFromTag(c.Param("tag"), 100, 1920, 1920)
 		if err != nil {
 			fmt.Println(err)
 			c.Status(http.StatusInternalServerError)
@@ -139,7 +82,7 @@ func main() {
 	})
 
 	router.GET("/instagram/tag/:tag/10.gif", func(c *gin.Context) {
-		urls, err := getLatestPicturesFromTag(i, c.Param("tag"), 10, 640, 640)
+		urls, err := insta.GetLatestPicturesFromTag(c.Param("tag"), 10, 640, 640)
 		if err != nil {
 			fmt.Println(err)
 			c.Status(http.StatusInternalServerError)
