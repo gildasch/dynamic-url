@@ -3,22 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"time"
 
-	"github.com/gildasch/dynamic-url/gif"
 	"github.com/gildasch/dynamic-url/instagram"
+	"github.com/gildasch/dynamic-url/utils"
+	"github.com/gildasch/dynamic-url/utils/gif"
 	"github.com/gin-gonic/gin"
 )
-
-func oneOf(ss []string) string {
-	if len(ss) == 0 {
-		return ""
-	}
-
-	return ss[rand.Intn(len(ss)-1)]
-}
 
 func main() {
 	instagramLoginPtr := flag.Bool("instagram-login", false, "log-in to instagram and export connexion file")
@@ -66,7 +58,7 @@ func instagramHandler(insta *instagram.Client, search string, format string) fun
 
 		switch format {
 		case "jpg":
-			c.Redirect(http.StatusFound, oneOf(urls))
+			c.Redirect(http.StatusFound, utils.OneOf(urls))
 			return
 		case "gif":
 			delay, err := time.ParseDuration(c.DefaultQuery("delay", "1s"))
