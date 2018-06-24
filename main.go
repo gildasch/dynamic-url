@@ -223,13 +223,16 @@ func movieAllHandler(ms []movies.Movie, format string) func(c *gin.Context) {
     <img src='/movies/%s/at/%s/1.jpg' style='max-width:240px' />
   </td>
   <td>
+    %s
+  </td>
+  <td>
     <a href='/movies/%s/at/%s/1.jpg'>JPEG</a>
   </td>
   <td>
     <a href='/movies/%s/at/%s/1.gif'>GIF</a>
   </td>
 </tr>`,
-				name, i, name, i, name, i)
+				name, i, i, name, i, name, i)
 		}
 		fmt.Fprintf(c.Writer, "</table>")
 	}
