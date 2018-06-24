@@ -1,12 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
+	"image/jpeg"
 	"net/http"
 	"time"
 
 	"github.com/gildasch/dynamic-url/instagram"
+	"github.com/gildasch/dynamic-url/movies"
 	"github.com/gildasch/dynamic-url/utils"
 	"github.com/gildasch/dynamic-url/utils/gif"
 	"github.com/gin-gonic/gin"
@@ -28,6 +31,18 @@ func main() {
 	router.GET("/instagram/user/:username/10.gif", instagramHandler(insta, "user", "gif"))
 	router.GET("/instagram/tag/:tag/10.jpg", instagramHandler(insta, "tag", "jpg"))
 	router.GET("/instagram/tag/:tag/10.gif", instagramHandler(insta, "tag", "gif"))
+
+	var ms []movies.Movie
+
+	lca, err := movies.NewLocal("lca", "~/dev/lca/lca.mkv", "", 1024, 576)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	ms = append(ms, lca)
+
+	router.GET("/movies/:name/:at/1.jpg", movieHandler(ms))
 
 	router.Run()
 }
@@ -85,5 +100,42 @@ func instagramHandler(insta *instagram.Client, search string, format string) fun
 
 		c.Status(http.StatusBadRequest)
 		return
+	}
+}
+
+func movieHandler(ms []movies.Movie) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		name := c.Param("name")
+
+		var movie movies.Movie
+		for _, m := range ms {
+			if m.Name() == name {
+				movie = m
+				break
+			}
+		}
+
+		if movie == nil {
+			fmt.Println("movie not found")
+			c.Status(http.StatusBadRequest)
+			return
+		}
+
+		at, err := time.ParseDuration(c.Param("at"))
+		if err != nil {
+			fmt.Println(err)
+			c.Status(http.StatusBadRequest)
+			return
+		}
+
+		jpg := utils.WithCaption(movie.Frame(at), movie.Caption(at))
+		var buf bytes.Buffer
+		err = jpeg.Encode(&buf, jpg, nil)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
+		c.Data(http.StatusOK, "image/jpeg", buf.Bytes())
 	}
 }

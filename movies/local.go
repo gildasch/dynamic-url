@@ -10,6 +10,7 @@ import (
 )
 
 type Local struct {
+	name          string
 	video         string
 	captions      string
 	width, height int
@@ -17,19 +18,24 @@ type Local struct {
 	duration time.Duration
 }
 
-func NewLocal(video, captions string, width, height int) (*Local, error) {
+func NewLocal(name, video, captions string, width, height int) (*Local, error) {
 	d, err := ffmpeg.Duration(video)
 	if err != nil {
 		errors.Wrapf(err, "could not inspect movie file %q", video)
 	}
 
 	return &Local{
+		name:     name,
 		video:    video,
 		captions: captions,
 		width:    width,
 		height:   height,
 		duration: d,
 	}, nil
+}
+
+func (l *Local) Name() string {
+	return l.name
 }
 
 func (l *Local) Duration() time.Duration {
