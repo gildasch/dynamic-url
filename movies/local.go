@@ -51,11 +51,17 @@ func (l *Local) Frame(at time.Duration) image.Image {
 }
 
 func (l *Local) Frames(at time.Duration, n int) []image.Image {
-	is, err := ffmpeg.Captures(l.video, at, l.width, l.height, n)
+	is, err := ffmpeg.GIFCaptures(l.video, at, l.width, l.height, n)
 	if err != nil {
 		fmt.Println("unexpected error:", err)
 	}
-	return is
+
+	var out []image.Image
+	for _, i := range is {
+		out = append(out, i)
+	}
+
+	return out
 }
 
 func (l *Local) Caption(at time.Duration) string {

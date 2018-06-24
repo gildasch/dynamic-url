@@ -29,7 +29,11 @@ func MakeGIFFromImages(in []image.Image, delay time.Duration, converter Converte
 	start := time.Now()
 	for _, i := range in {
 		// Add new frame to animated GIF
-		outGif.Image = append(outGif.Image, converter.Convert(i, i.Bounds(), nil))
+		if paletted, ok := i.(*image.Paletted); ok {
+			outGif.Image = append(outGif.Image, paletted)
+		} else {
+			outGif.Image = append(outGif.Image, converter.Convert(i, i.Bounds(), nil))
+		}
 		outGif.Delay = append(outGif.Delay, int(delay.Seconds()*100)) // delay is in 100th of second
 	}
 	fmt.Println("appends:", time.Since(start))

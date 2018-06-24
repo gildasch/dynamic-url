@@ -3,6 +3,7 @@ package ffmpeg
 import (
 	"fmt"
 	"image"
+	"image/gif"
 	"image/jpeg"
 	"os"
 	"os/exec"
@@ -73,6 +74,35 @@ func Captures(video string, after time.Duration, width, height, n int) ([]image.
 		images = append(images, image)
 	}
 	return images, nil
+}
+
+func GIFCaptures(video string, after time.Duration, width, height, n int) ([]*image.Paletted, error) {
+	tmp := "/tmp/" + uuid.NewV4().String() + ".gif"
+	fmt.Println("saving", n, tmp)
+	defer os.Remove(tmp)
+
+	resolutionFlag := ""
+	if width != 0 || height != 0 {
+		resolutionFlag = fmt.Sprintf("-s %dx%d", width, height)
+	}
+
+	_, err := execCommand(
+		fmt.Sprintf(`ffmpeg -y -ss %f -i %s -vframes %d -r 5 %s %s`, after.Seconds(), video, n, resolutionFlag, tmp))
+	if err != nil {
+		return nil, err
+	}
+
+	f, err := os.Open(tmp)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	g, err := gif.DecodeAll(f)
+	if err != nil {
+		return nil, err
+	}
+
+	return g.Image, nil
 }
 
 func execCommand(cmdStr string) (string, error) {

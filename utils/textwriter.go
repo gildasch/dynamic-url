@@ -2,6 +2,7 @@ package utils
 
 import (
 	"image"
+	"image/draw"
 
 	"github.com/fogleman/gg"
 )
@@ -37,6 +38,12 @@ func WithCaption(in image.Image, caption string) image.Image {
 
 	drawStroke(c, caption, fontSize, float64(w), float64(h), pos)
 	drawText(c, caption, fontSize, float64(w), float64(h), pos)
+
+	if paletted, ok := in.(*image.Paletted); ok {
+		out := image.NewPaletted(c.Image().Bounds(), paletted.Palette)
+		draw.Draw(out, out.Bounds(), c.Image(), c.Image().Bounds().Min, draw.Src)
+		return out
+	}
 
 	return c.Image()
 }
