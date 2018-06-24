@@ -162,10 +162,10 @@ func movieHandler(ms []movies.Movie, format string) func(c *gin.Context) {
 			c.Data(http.StatusOK, "image/jpeg", buf.Bytes())
 			return
 		case "gif":
-			nframes := 20
+			nframes := 50
 			if c.Query("frames") != "" {
 				i, err := strconv.Atoi(c.Query("frames"))
-				if err == nil && nframes <= 100 {
+				if err == nil && nframes <= 200 {
 					nframes = i
 				}
 			}
@@ -181,7 +181,7 @@ func movieHandler(ms []movies.Movie, format string) func(c *gin.Context) {
 				convert = gif.FloydSteinberg{}
 			}
 
-			gif, err := gif.MakeGIFFromImages(withCaption, 250*time.Millisecond, convert)
+			gif, err := gif.MakeGIFFromImages(withCaption, 150*time.Millisecond, convert)
 			if err != nil {
 				fmt.Println(err)
 				c.Status(http.StatusInternalServerError)
