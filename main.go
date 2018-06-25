@@ -15,6 +15,8 @@ import (
 	"github.com/gildasch/dynamic-url/script"
 	"github.com/gildasch/dynamic-url/utils"
 	"github.com/gildasch/dynamic-url/utils/gif"
+	"github.com/gin-contrib/cache"
+	"github.com/gin-contrib/cache/persistence"
 	"github.com/gin-gonic/gin"
 )
 
@@ -30,12 +32,16 @@ func main() {
 		return
 	}
 
+	store := persistence.NewInMemoryStore(365 * 24 * time.Hour)
+
 	router := gin.Default()
 
 	router.GET("/instagram/user/:username/10.jpg", instagramHandler(insta, "user", "jpg"))
-	router.GET("/instagram/user/:username/10.gif", instagramHandler(insta, "user", "gif"))
+	router.GET("/instagram/user/:username/10.gif",
+		cache.CachePage(store, 365*24*time.Hour, instagramHandler(insta, "user", "gif")))
 	router.GET("/instagram/tag/:tag/10.jpg", instagramHandler(insta, "tag", "jpg"))
-	router.GET("/instagram/tag/:tag/10.gif", instagramHandler(insta, "tag", "gif"))
+	router.GET("/instagram/tag/:tag/10.gif",
+		cache.CachePage(store, 365*24*time.Hour, instagramHandler(insta, "tag", "gif")))
 
 	var ms []movies.Movie
 
@@ -54,8 +60,10 @@ func main() {
 	ms = append(ms, lca)
 
 	router.GET("/movies/:name/at/:at/1.jpg", movieHandler(ms, "jpg"))
-	router.GET("/movies/:name/at/:at/1.gif", movieHandler(ms, "gif"))
-	router.GET("/movies/:name/all.html", movieAllHandler(ms, "gif"))
+	router.GET("/movies/:name/at/:at/1.gif",
+		cache.CachePage(store, 365*24*time.Hour, movieHandler(ms, "gif")))
+	router.GET("/movies/:name/all.html",
+		cache.CachePage(store, 365*24*time.Hour, movieAllHandler(ms, "gif")))
 
 	router.Run()
 }
