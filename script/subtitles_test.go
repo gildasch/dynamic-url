@@ -29,4 +29,10 @@ func TestSubtitles(t *testing.T) {
 	assert.Equal(t,
 		"Mais moi je les baise, les ménagères. Pas vrai ?",
 		s.At(1*time.Minute+2*time.Second+458*time.Millisecond))
+	assert.Equal(t,
+		"",
+		s.At(0))
+	assert.Equal(t,
+		"",
+		s.At(2*time.Hour+1*time.Minute))
 }
