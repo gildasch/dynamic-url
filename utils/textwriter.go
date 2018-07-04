@@ -52,6 +52,10 @@ func adjustFontSize(c *gg.Context, text string, fontSize, w, h float64) (txtHeig
 	c.LoadFontFace(FontFamily, fontSize)
 	lines := c.WordWrap(text, w)
 
+	if text == "" {
+		return textHeight(len(lines), fontSize), fontSize
+	}
+
 	for textHeight(len(lines), fontSize) > h*TextHeightPercent && fontSize > MinFontSize {
 		fontSize--
 		c.LoadFontFace(FontFamily, fontSize)
