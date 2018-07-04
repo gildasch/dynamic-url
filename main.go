@@ -20,6 +20,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const framesPerSecond = 5
+
 func main() {
 	instagramLoginPtr := flag.Bool("instagram-login", false, "log-in to instagram and export connection file")
 	lcaMovie := flag.String("lca-movie", "", "path to the movie file of lca")
@@ -189,9 +191,16 @@ func movieHandler(ms []movies.Movie, format string) func(c *gin.Context) {
 				}
 			}
 
-			frames := movie.Frames(at, nframes)
+			frames := movie.Frames(at, nframes, framesPerSecond)
 			var withCaption []image.Image
-			for _, f := range frames {
+			for i, f := range frames {
+				var caption string
+				if c.Query("text") != "" {
+					caption = c.Query("text")
+				} else {
+					caption = movie.Caption(at + time.Duration(i)*time.Second/time.Duration(framesPerSecond))
+				}
+
 				withCaption = append(withCaption, utils.WithCaption(f, caption))
 			}
 

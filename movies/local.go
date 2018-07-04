@@ -54,8 +54,8 @@ func (l *Local) Frame(at time.Duration) image.Image {
 	return i
 }
 
-func (l *Local) Frames(at time.Duration, n int) []image.Image {
-	is, err := ffmpeg.GIFCaptures(l.video, at, l.width, l.height, n)
+func (l *Local) Frames(at time.Duration, n, framesPerSecond int) []image.Image {
+	is, err := ffmpeg.GIFCaptures(l.video, at, l.width, l.height, n, framesPerSecond)
 	if err != nil {
 		fmt.Println("unexpected error:", err)
 	}

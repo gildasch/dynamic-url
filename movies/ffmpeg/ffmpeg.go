@@ -76,7 +76,7 @@ func Captures(video string, after time.Duration, width, height, n int) ([]image.
 	return images, nil
 }
 
-func GIFCaptures(video string, after time.Duration, width, height, n int) ([]*image.Paletted, error) {
+func GIFCaptures(video string, after time.Duration, width, height, n, framesPerSecond int) ([]*image.Paletted, error) {
 	tmp := "/tmp/" + uuid.NewV4().String() + ".gif"
 	fmt.Println("saving", n, tmp)
 	defer os.Remove(tmp)
@@ -87,7 +87,8 @@ func GIFCaptures(video string, after time.Duration, width, height, n int) ([]*im
 	}
 
 	_, err := execCommand(
-		fmt.Sprintf(`ffmpeg -y -ss %f -i %s -vframes %d -r 5 %s %s`, after.Seconds(), video, n, resolutionFlag, tmp))
+		fmt.Sprintf(`ffmpeg -y -ss %f -i %s -vframes %d -r %d %s %s`,
+			after.Seconds(), video, n, framesPerSecond, resolutionFlag, tmp))
 	if err != nil {
 		return nil, err
 	}
