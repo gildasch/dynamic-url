@@ -24,6 +24,7 @@ func main() {
 	instagramLoginPtr := flag.Bool("instagram-login", false, "log-in to instagram and export connection file")
 	lcaMovie := flag.String("lca-movie", "", "path to the movie file of lca")
 	lcaScript := flag.String("lca-script", "", "path to the script file of lca")
+	lcaSubtitles := flag.String("lca-subs", "", "path to the subtitle file of lca")
 	flag.Parse()
 
 	insta, err := instagram.NewClient(".goinsta", *instagramLoginPtr)
@@ -45,13 +46,23 @@ func main() {
 
 	var ms []movies.Movie
 
-	script, err := script.NewScript(*lcaScript, 10*time.Second)
-	if err != nil {
-		fmt.Println(err)
-		return
+	var captions movies.Captions
+
+	if *lcaScript != "" {
+		captions, err = script.NewScript(*lcaScript, 10*time.Second)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+	} else if *lcaSubtitles != "" {
+		captions, err = script.NewSubtitles(*lcaSubtitles)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
 
-	lca, err := movies.NewLocal("lca", *lcaMovie, script, 1024/2, 576/2)
+	lca, err := movies.NewLocal("lca", *lcaMovie, captions, 1024/2, 576/2)
 	if err != nil {
 		fmt.Println(err)
 		return

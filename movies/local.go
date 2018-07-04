@@ -6,20 +6,23 @@ import (
 	"time"
 
 	"github.com/gildasch/dynamic-url/movies/ffmpeg"
-	"github.com/gildasch/dynamic-url/script"
 	"github.com/pkg/errors"
 )
 
 type Local struct {
 	name          string
 	video         string
-	captions      *script.Script
+	captions      Captions
 	width, height int
 
 	duration time.Duration
 }
 
-func NewLocal(name, video string, captions *script.Script, width, height int) (*Local, error) {
+type Captions interface {
+	At(t time.Duration) string
+}
+
+func NewLocal(name, video string, captions Captions, width, height int) (*Local, error) {
 	d, err := ffmpeg.Duration(video)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not inspect movie file %q", video)
