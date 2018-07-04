@@ -193,14 +193,27 @@ func movieHandler(ms []movies.Movie, format string) func(c *gin.Context) {
 
 			frames := movie.Frames(at, nframes, framesPerSecond)
 			var withCaption []image.Image
-			for i, f := range frames {
-				var caption string
+
+			previousCaption := caption
+			for i := 0; i < len(frames); i++ {
+				f := frames[i]
+
 				if c.Query("text") != "" {
 					caption = c.Query("text")
 				} else {
 					caption = movie.Caption(at + time.Duration(i)*time.Second/time.Duration(framesPerSecond))
 				}
 
+				if caption != previousCaption {
+					at = at + time.Duration(i)*time.Second/time.Duration(framesPerSecond)
+					nframes = nframes - i
+					frames = movie.Frames(at, nframes, framesPerSecond)
+					i = -1
+					previousCaption = caption
+					continue
+				}
+
+				previousCaption = caption
 				withCaption = append(withCaption, utils.WithCaption(f, caption))
 			}
 
