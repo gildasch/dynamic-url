@@ -38,10 +38,10 @@ func main() {
 
 	router.GET("/instagram/user/:username/10.jpg", instagramHandler(insta, "user", "jpg"))
 	router.GET("/instagram/user/:username/10.gif",
-		cache.CachePage(store, 365*24*time.Hour, instagramHandler(insta, "user", "gif")))
+		cache.CachePage(store, 12*time.Hour, instagramHandler(insta, "user", "gif")))
 	router.GET("/instagram/tag/:tag/10.jpg", instagramHandler(insta, "tag", "jpg"))
 	router.GET("/instagram/tag/:tag/10.gif",
-		cache.CachePage(store, 365*24*time.Hour, instagramHandler(insta, "tag", "gif")))
+		cache.CachePage(store, 12*time.Hour, instagramHandler(insta, "tag", "gif")))
 
 	var ms []movies.Movie
 
