@@ -29,6 +29,9 @@ func NewSubtitles(path string) (*Subtitles, error) {
 	for _, i := range s.Items {
 		t := ""
 		for _, l := range i.Lines {
+			if t != "" {
+				t += "\n"
+			}
 			t += l.String()
 		}
 
