@@ -24,9 +24,7 @@ const framesPerSecond = 5
 
 func main() {
 	instagramLoginPtr := flag.Bool("instagram-login", false, "log-in to instagram and export connection file")
-	lcaMovie := flag.String("lca-movie", "", "path to the movie file of lca")
-	lcaScript := flag.String("lca-script", "", "path to the script file of lca")
-	lcaSubtitles := flag.String("lca-subs", "", "path to the subtitle file of lca")
+	confPath := flag.String("conf", "", "path to conf")
 	flag.Parse()
 
 	insta, err := instagram.NewClient(".goinsta", *instagramLoginPtr)
@@ -46,37 +44,47 @@ func main() {
 	router.GET("/instagram/tag/:tag/10.gif",
 		cache.CachePage(store, 12*time.Hour, instagramHandler(insta, "tag", "gif")))
 
-	var ms []movies.Movie
-
-	var captions movies.Captions
-
-	if *lcaScript != "" {
-		captions, err = script.NewScript(*lcaScript, 10*time.Second)
+	if confPath != nil {
+		conf, err := parseConfFile(*confPath)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-	} else if *lcaSubtitles != "" {
-		captions, err = script.NewSubtitles(*lcaSubtitles)
-		if err != nil {
-			fmt.Println(err)
-			return
+
+		var ms []movies.Movie
+
+		for name, mc := range conf.Movies {
+			var captions movies.Captions
+
+			if mc.Script != "" {
+				captions, err = script.NewScript(mc.Script, 10*time.Second)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+			} else if mc.Subtitles != "" {
+				captions, err = script.NewSubtitles(mc.Subtitles)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+			}
+
+			l, err := movies.NewLocal(name, mc.Movie, captions, 1024/2, 576/2)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			ms = append(ms, l)
 		}
+
+		router.GET("/movies/:name/at/:at/1.jpg", movieHandler(ms, "jpg"))
+		router.GET("/movies/:name/at/:at/1.gif",
+			cache.CachePage(store, 365*24*time.Hour, movieHandler(ms, "gif")))
+		router.GET("/movies/:name/all.html",
+			cache.CachePage(store, 365*24*time.Hour, movieAllHandler(ms, "gif")))
 	}
-
-	lca, err := movies.NewLocal("lca", *lcaMovie, captions, 1024/2, 576/2)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	ms = append(ms, lca)
-
-	router.GET("/movies/:name/at/:at/1.jpg", movieHandler(ms, "jpg"))
-	router.GET("/movies/:name/at/:at/1.gif",
-		cache.CachePage(store, 365*24*time.Hour, movieHandler(ms, "gif")))
-	router.GET("/movies/:name/all.html",
-		cache.CachePage(store, 365*24*time.Hour, movieAllHandler(ms, "gif")))
 
 	router.Run()
 }
