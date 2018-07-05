@@ -12,6 +12,7 @@ import (
 
 	"github.com/gildasch/dynamic-url/instagram"
 	"github.com/gildasch/dynamic-url/movies"
+	"github.com/gildasch/dynamic-url/movies/ffmpeg"
 	"github.com/gildasch/dynamic-url/script"
 	"github.com/gildasch/dynamic-url/utils"
 	"github.com/gildasch/dynamic-url/utils/gif"
@@ -25,7 +26,10 @@ const framesPerSecond = 5
 func main() {
 	instagramLoginPtr := flag.Bool("instagram-login", false, "log-in to instagram and export connection file")
 	confPath := flag.String("conf", "", "path to conf")
+	debug := flag.Bool("debug", false, "debug mode")
 	flag.Parse()
+
+	ffmpeg.Debug = *debug
 
 	insta, err := instagram.NewClient(".goinsta", *instagramLoginPtr)
 	if err != nil {
