@@ -19,7 +19,7 @@ var Debug = false
 func Duration(video string) (time.Duration, error) {
 	// from https://superuser.com/questions/650291/how-to-get-video-duration-in-seconds
 	out, err := execCommand(
-		fmt.Sprintf(`ffmpeg -i %s 2>&1 | grep "Duration"| cut -d ' ' -f 4 | sed s/,// | sed 's@\..*@@g' | awk '{ split($1, A, ":"); split(A[3], B, "."); print 3600*A[1] + 60*A[2] + B[1] }'`, video))
+		fmt.Sprintf(`ffmpeg -i '%s' 2>&1 | grep "Duration"| cut -d ' ' -f 4 | sed s/,// | sed 's@\..*@@g' | awk '{ split($1, A, ":"); split(A[3], B, "."); print 3600*A[1] + 60*A[2] + B[1] }'`, video))
 	if err != nil {
 		return 0, err
 	}
@@ -55,7 +55,7 @@ func Captures(video string, after time.Duration, width, height, n int) ([]image.
 	}
 
 	_, err := execCommand(
-		fmt.Sprintf(`ffmpeg -y -ss %f -i %s -vframes %d -r 5 %s %s`, after.Seconds(), video, n, resolutionFlag, tmp))
+		fmt.Sprintf(`ffmpeg -y -ss %f -i '%s' -vframes %d -r 5 %s %s`, after.Seconds(), video, n, resolutionFlag, tmp))
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func GIFCaptures(video string, after time.Duration, width, height, n, framesPerS
 	}
 
 	_, err := execCommand(
-		fmt.Sprintf(`ffmpeg -y -ss %f -i %s -vframes %d -r %d %s %s`,
+		fmt.Sprintf(`ffmpeg -y -ss %f -i '%s' -vframes %d -r %d %s %s`,
 			after.Seconds(), video, n, framesPerSecond, resolutionFlag, tmp))
 	if err != nil {
 		return nil, err
