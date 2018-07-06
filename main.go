@@ -184,7 +184,7 @@ func movieHandler(ms []movies.Movie, format string) func(c *gin.Context) {
 
 		switch format {
 		case "jpg":
-			jpg := utils.WithCaption(movie.Frame(at), caption)
+			jpg := utils.WithCaption(movie.Frame(at), nil, caption)
 			var buf bytes.Buffer
 			err = jpeg.Encode(&buf, jpg, nil)
 			if err != nil {
@@ -207,8 +207,13 @@ func movieHandler(ms []movies.Movie, format string) func(c *gin.Context) {
 			var withCaption []image.Image
 
 			previousCaption := caption
+			var bounds *image.Rectangle
 			for i := 0; i < len(frames); i++ {
 				f := frames[i]
+				if bounds == nil {
+					fb := f.Bounds()
+					bounds = &fb
+				}
 
 				if c.Query("text") != "" {
 					caption = c.Query("text")
@@ -220,13 +225,14 @@ func movieHandler(ms []movies.Movie, format string) func(c *gin.Context) {
 					at = at + time.Duration(i)*time.Second/time.Duration(framesPerSecond)
 					nframes = nframes - i
 					frames = movie.Frames(at, nframes, framesPerSecond)
+					bounds = nil
 					i = -1
 					previousCaption = caption
 					continue
 				}
 
 				previousCaption = caption
-				withCaption = append(withCaption, utils.WithCaption(f, caption))
+				withCaption = append(withCaption, utils.WithCaption(f, bounds, caption))
 			}
 
 			var convert gif.Converter = gif.StandardQuantizer{}

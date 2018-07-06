@@ -20,8 +20,11 @@ const Padding = 15
 const DefaultPos = BOTTOM
 const TextHeightPercent = 0.3
 
-func WithCaption(in image.Image, caption string) image.Image {
+func WithCaption(in image.Image, b *image.Rectangle, caption string) image.Image {
 	w, h := in.Bounds().Dx(), in.Bounds().Dy()
+	if b != nil {
+		w, h = b.Dx(), b.Dy()
+	}
 
 	c := gg.NewContext(w, h)
 	c.DrawImage(in, 0, 0)
