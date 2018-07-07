@@ -2,6 +2,7 @@ package script
 
 import (
 	"sort"
+	"strings"
 	"time"
 
 	astisub "github.com/asticode/go-astisub"
@@ -32,7 +33,15 @@ func NewSubtitles(path string) (*Subtitles, error) {
 			if t != "" {
 				t += "\n"
 			}
-			t += l.String()
+
+			lineText := l.String()
+
+			if strings.HasPrefix(lineText, "<i>") &&
+				strings.HasSuffix(lineText, "</i>") {
+				continue
+			}
+
+			t += lineText
 		}
 
 		if t == "" {
