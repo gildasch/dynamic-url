@@ -31,13 +31,28 @@ func main() {
 
 	ffmpeg.Debug = *debug
 
+	var conf conf
+	if confPath != nil {
+		var err error
+		conf, err = parseConfFile(*confPath)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+	}
+
 	insta, err := instagram.NewClient(".goinsta", *instagramLoginPtr)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	store := persistence.NewInMemoryStore(365 * 24 * time.Hour)
+	var store persistence.CacheStore
+	if conf.RedisCache != "" {
+		store = persistence.NewRedisCache(conf.RedisCache, "", 365*24*time.Hour)
+	} else {
+		store = persistence.NewInMemoryStore(365 * 24 * time.Hour)
+	}
 
 	router := gin.Default()
 
@@ -48,13 +63,7 @@ func main() {
 	router.GET("/instagram/tag/:tag/10.gif",
 		cache.CachePage(store, 12*time.Hour, instagramHandler(insta, "tag", "gif")))
 
-	if confPath != nil {
-		conf, err := parseConfFile(*confPath)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
+	if conf.Movies != nil {
 		var ms []movies.Movie
 
 		for name, mc := range conf.Movies {

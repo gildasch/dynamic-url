@@ -13,6 +13,7 @@ movies:
   lca:
     movie: ici.mkv
     subtitles: la.srt
+redis_cache: localhost:1234
 `)
 
 	require.NoError(t, err)
@@ -23,5 +24,14 @@ movies:
 				Subtitles: "la.srt",
 			},
 		},
+		RedisCache: "localhost:1234",
 	}, c)
+}
+
+func TestParseConfEmptyFields(t *testing.T) {
+	c, err := parseConf(`
+`)
+
+	require.NoError(t, err)
+	assert.Equal(t, conf{}, c)
 }

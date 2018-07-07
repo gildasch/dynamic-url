@@ -8,7 +8,8 @@ import (
 )
 
 type conf struct {
-	Movies map[string]movieConf
+	Movies     map[string]movieConf
+	RedisCache string `yaml:"redis_cache"`
 }
 
 type movieConf struct {
