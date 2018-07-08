@@ -14,6 +14,7 @@ import (
 	"github.com/gildasch/dynamic-url/movies"
 	"github.com/gildasch/dynamic-url/movies/ffmpeg"
 	"github.com/gildasch/dynamic-url/script"
+	"github.com/gildasch/dynamic-url/script/search"
 	"github.com/gildasch/dynamic-url/utils"
 	"github.com/gildasch/dynamic-url/utils/gif"
 	"github.com/gin-contrib/cache"
@@ -65,6 +66,7 @@ func main() {
 
 	if conf.Movies != nil {
 		var ms []movies.Movie
+		indexes := make(map[string]*search.Index)
 
 		for name, mc := range conf.Movies {
 			var captions movies.Captions
@@ -76,11 +78,14 @@ func main() {
 					return
 				}
 			} else if mc.Subtitles != "" {
-				captions, err = script.NewSubtitles(mc.Subtitles)
+				subtitles, err := script.NewSubtitles(mc.Subtitles)
 				if err != nil {
 					fmt.Println(err)
 					return
 				}
+
+				indexes[name] = search.NewIndex(subtitles)
+				captions = subtitles
 			}
 
 			l, err := movies.NewLocal(name, mc.Movie, captions, 1024/2, 576/2)
@@ -97,6 +102,8 @@ func main() {
 			cache.CachePage(store, 365*24*time.Hour, movieHandler(ms, "gif")))
 		router.GET("/movies/:name/all.html",
 			cache.CachePage(store, 365*24*time.Hour, movieAllHandler(ms, "gif")))
+		router.GET("/movies/:name/search.html",
+			cache.CachePage(store, 365*24*time.Hour, movieSearchHandler(indexes)))
 	}
 
 	router.Run()
@@ -301,6 +308,49 @@ func movieAllHandler(ms []movies.Movie, format string) func(c *gin.Context) {
   </td>
 </tr>`,
 				name, i, i, name, i, name, i)
+		}
+		fmt.Fprintf(c.Writer, "</table>")
+	}
+}
+
+func movieSearchHandler(indexes map[string]*search.Index) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		name := c.Param("name")
+		query := c.Query("query")
+
+		if query == "" {
+			c.Status(http.StatusBadRequest)
+			return
+		}
+
+		index, ok := indexes[name]
+		if !ok {
+			fmt.Println("movie not found")
+			c.Status(http.StatusBadRequest)
+			return
+		}
+
+		c.Status(http.StatusOK)
+		fmt.Fprintf(c.Writer, "<table>")
+
+		res := index.Search(query)
+		for _, at := range res {
+			fmt.Fprintf(c.Writer, `
+<tr>
+  <td>
+    <img src='/movies/%s/at/%s/1.jpg' style='max-width:240px' />
+  </td>
+  <td>
+    %s
+  </td>
+  <td>
+    <a href='/movies/%s/at/%s/1.jpg'>JPEG</a>
+  </td>
+  <td>
+    <a href='/movies/%s/at/%s/1.gif'>GIF</a>
+  </td>
+</tr>`,
+				name, at, at, at, at)
 		}
 		fmt.Fprintf(c.Writer, "</table>")
 	}
