@@ -350,7 +350,7 @@ func movieSearchHandler(indexes map[string]*search.Index) func(c *gin.Context) {
     <a href='/movies/%s/at/%s/1.gif'>GIF</a>
   </td>
 </tr>`,
-				name, at, at, at, at)
+				name, at, at, name, at, name, at)
 		}
 		fmt.Fprintf(c.Writer, "</table>")
 	}
