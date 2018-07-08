@@ -70,3 +70,11 @@ func (s *Subtitles) At(t time.Duration) string {
 
 	return ""
 }
+
+func (s *Subtitles) Len() int {
+	return len(s.quotes)
+}
+
+func (s *Subtitles) Quote(i int) (string, time.Duration) {
+	return s.quotes[i].Quote, s.quotes[i].Start
+}
