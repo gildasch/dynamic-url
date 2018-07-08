@@ -3,6 +3,7 @@ package utils
 import (
 	"image"
 	"image/draw"
+	"strings"
 
 	"github.com/fogleman/gg"
 )
@@ -16,6 +17,7 @@ const (
 const DefaultFontSize = 70.0
 const MinFontSize = 20
 const FontFamily = "LiberationSans-Regular.ttf"
+const FontFamilyItalic = "LiberationSans-Italic.ttf"
 const Padding = 15
 const DefaultPos = BOTTOM
 const TextHeightPercent = 0.3
@@ -29,10 +31,19 @@ func WithCaption(in image.Image, b *image.Rectangle, caption string) image.Image
 	c := gg.NewContext(w, h)
 	c.DrawImage(in, 0, 0)
 
-	fontSize := DefaultFontSize
-	c.LoadFontFace(FontFamily, fontSize)
+	fontFamily := FontFamily
 
-	textHeight, fontSize := adjustFontSize(c, caption, fontSize, float64(w), float64(h))
+	if strings.HasPrefix(caption, "<i>") &&
+		strings.HasSuffix(caption, "</i>") {
+		caption = strings.TrimPrefix(caption, "<i>")
+		caption = strings.TrimSuffix(caption, "</i>")
+		fontFamily = FontFamilyItalic
+	}
+
+	fontSize := DefaultFontSize
+	c.LoadFontFace(fontFamily, fontSize)
+
+	textHeight, fontSize := adjustFontSize(c, caption, fontSize, fontFamily, float64(w), float64(h))
 
 	pos := DefaultPos
 	if textHeight > float64(h)/2 {
@@ -51,8 +62,8 @@ func WithCaption(in image.Image, b *image.Rectangle, caption string) image.Image
 	return c.Image()
 }
 
-func adjustFontSize(c *gg.Context, text string, fontSize, w, h float64) (txtHeight, newFontSize float64) {
-	c.LoadFontFace(FontFamily, fontSize)
+func adjustFontSize(c *gg.Context, text string, fontSize float64, fontFamily string, w, h float64) (txtHeight, newFontSize float64) {
+	c.LoadFontFace(fontFamily, fontSize)
 	lines := c.WordWrap(text, w)
 
 	if text == "" {
@@ -61,13 +72,13 @@ func adjustFontSize(c *gg.Context, text string, fontSize, w, h float64) (txtHeig
 
 	for textHeight(len(lines), fontSize) > h*TextHeightPercent && fontSize > MinFontSize {
 		fontSize--
-		c.LoadFontFace(FontFamily, fontSize)
+		c.LoadFontFace(fontFamily, fontSize)
 		lines = c.WordWrap(text, w)
 	}
 
 	for textHeight(len(lines), fontSize) < h*TextHeightPercent {
 		fontSize++
-		c.LoadFontFace(FontFamily, fontSize)
+		c.LoadFontFace(fontFamily, fontSize)
 		lines = c.WordWrap(text, w)
 	}
 
