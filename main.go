@@ -318,7 +318,7 @@ func movieSearchHandler(indexes map[string]*search.Index) func(c *gin.Context) {
 		name := c.Param("name")
 		query := c.Query("query")
 
-		if query == "" {
+		if len(query) <= 1 {
 			c.Status(http.StatusBadRequest)
 			return
 		}
