@@ -222,6 +222,9 @@ func movieHandler(ms []movies.Movie, format string) func(c *gin.Context) {
 			frames := movie.Frames(at, nframes, framesPerSecond)
 			var withCaption []image.Image
 
+			startTimeInMovie := at
+			endTimeInMovie := at + time.Duration(nframes)*time.Second/time.Duration(framesPerSecond)
+
 			previousCaption := caption
 			var bounds *image.Rectangle
 			for i := 0; i < len(frames); i++ {
@@ -231,14 +234,25 @@ func movieHandler(ms []movies.Movie, format string) func(c *gin.Context) {
 					bounds = &fb
 				}
 
+				timeInMovie := at + time.Duration(i)*time.Second/time.Duration(framesPerSecond)
+
 				if c.Query("text") != "" {
 					caption = c.Query("text")
 				} else {
-					caption = movie.Caption(at + time.Duration(i)*time.Second/time.Duration(framesPerSecond))
+					caption = movie.Caption(timeInMovie)
+
+					if timeInMovie < startTimeInMovie+time.Second &&
+						caption != movie.Caption(startTimeInMovie+time.Second) {
+						caption = ""
+					}
+					if timeInMovie > endTimeInMovie-time.Second &&
+						caption != movie.Caption(endTimeInMovie-time.Second) {
+						caption = ""
+					}
 				}
 
 				if caption != previousCaption {
-					at = at + time.Duration(i)*time.Second/time.Duration(framesPerSecond)
+					at = timeInMovie
 					nframes = nframes - i
 					frames = movie.Frames(at, nframes, framesPerSecond)
 					bounds = nil
