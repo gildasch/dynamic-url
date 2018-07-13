@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gildasch/dynamic-url/movies"
 	"github.com/pkg/errors"
 )
 
@@ -88,4 +89,45 @@ func (s *Script) At(t time.Duration) string {
 	}
 
 	return s.quotes[n].Quote
+}
+
+func (s *Script) Between(start, end time.Duration) []movies.Caption {
+	if len(s.quotes) == 0 {
+		return nil
+	}
+
+	n := sort.Search(len(s.quotes), func(i int) bool {
+		return s.quotes[i].At > start
+	})
+
+	if n >= len(s.quotes) {
+		return nil
+	}
+
+	n = n - 1
+
+	var starts []time.Duration
+	var texts []string
+	for n+1 < len(s.quotes) && s.quotes[n].At < end {
+		starts = append(starts, s.quotes[n].At)
+		texts = append(texts, s.quotes[n].Quote)
+		n++
+	}
+
+	var captions []movies.Caption
+	i := 0
+	for ; i < len(starts)-1; i++ {
+		captions = append(captions, movies.Caption{
+			Text:  texts[i],
+			Start: starts[i],
+			End:   starts[i+1],
+		})
+	}
+	captions = append(captions, movies.Caption{
+		Text:  texts[i],
+		Start: starts[i],
+		End:   end,
+	})
+
+	return captions
 }

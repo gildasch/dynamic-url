@@ -5,6 +5,7 @@ import (
 	"time"
 
 	astisub "github.com/asticode/go-astisub"
+	"github.com/gildasch/dynamic-url/movies"
 	"github.com/pkg/errors"
 )
 
@@ -69,6 +70,34 @@ func (s *Subtitles) At(t time.Duration) string {
 	}
 
 	return ""
+}
+
+func (s *Subtitles) Between(start, end time.Duration) []movies.Caption {
+	if len(s.quotes) == 0 {
+		return nil
+	}
+
+	n := sort.Search(len(s.quotes), func(i int) bool {
+		return s.quotes[i].Start > start
+	})
+
+	if n == 0 {
+		return nil
+	}
+
+	n = n - 1
+
+	var captions []movies.Caption
+	for n < len(s.quotes) && (s.quotes[n].Start < end || start > s.quotes[n].End) {
+		captions = append(captions, movies.Caption{
+			Text:  s.quotes[n].Quote,
+			Start: s.quotes[n].Start,
+			End:   s.quotes[n].End,
+		})
+		n++
+	}
+
+	return captions
 }
 
 func (s *Subtitles) Len() int {

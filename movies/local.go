@@ -20,6 +20,7 @@ type Local struct {
 
 type Captions interface {
 	At(t time.Duration) string
+	Between(start, end time.Duration) []Caption
 }
 
 func NewLocal(name, video string, captions Captions, width, height int) (*Local, error) {
@@ -70,4 +71,8 @@ func (l *Local) Frames(at time.Duration, n, framesPerSecond int) []image.Image {
 
 func (l *Local) Caption(at time.Duration) string {
 	return l.captions.At(at)
+}
+
+func (l *Local) CaptionBetween(start, end time.Duration) []Caption {
+	return l.captions.Between(start, end)
 }
