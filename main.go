@@ -243,11 +243,11 @@ func movieHandler(ms []movies.Movie, format string) func(c *gin.Context) {
 				} else {
 					caption = movie.Caption(timeInMovie)
 
-					if timeInMovie < startTimeInMovie+time.Second &&
+					if timeInMovie < startTimeInMovie+300*time.Millisecond &&
 						caption != movie.Caption(startTimeInMovie+time.Second) {
 						caption = ""
 					}
-					if timeInMovie > endTimeInMovie-time.Second &&
+					if timeInMovie > endTimeInMovie-300*time.Millisecond &&
 						caption != movie.Caption(endTimeInMovie-time.Second) {
 						caption = ""
 					}
