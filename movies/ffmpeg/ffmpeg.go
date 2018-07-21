@@ -41,7 +41,11 @@ func Capture(video string, after time.Duration, width, height int) (image.Image,
 }
 
 func Captures(video string, after time.Duration, width, height, n int) ([]image.Image, error) {
-	tmp := "/tmp/" + uuid.NewV4().String() + "-%04d.jpg"
+	uuid, err := uuid.NewV4()
+	if err != nil {
+		return nil, err
+	}
+	tmp := "/tmp/" + uuid.String() + "-%04d.jpg"
 	fmt.Println("saving", n, tmp)
 	defer func() {
 		for i := 0; i < n; i++ {
@@ -54,7 +58,7 @@ func Captures(video string, after time.Duration, width, height, n int) ([]image.
 		resolutionFlag = fmt.Sprintf("-s %dx%d", width, height)
 	}
 
-	_, err := execCommand(
+	_, err = execCommand(
 		fmt.Sprintf(`ffmpeg -y -ss %f -i '%s' -vframes %d -r 5 %s %s`, after.Seconds(), video, n, resolutionFlag, tmp))
 	if err != nil {
 		return nil, err
@@ -77,7 +81,11 @@ func Captures(video string, after time.Duration, width, height, n int) ([]image.
 }
 
 func GIFCaptures(video string, after time.Duration, width, height, n, framesPerSecond int) ([]*image.Paletted, error) {
-	tmp := "/tmp/" + uuid.NewV4().String() + ".gif"
+	uuid, err := uuid.NewV4()
+	if err != nil {
+		return nil, err
+	}
+	tmp := "/tmp/" + uuid.String() + ".gif"
 	fmt.Println("saving", n, tmp)
 	defer os.Remove(tmp)
 
@@ -86,7 +94,7 @@ func GIFCaptures(video string, after time.Duration, width, height, n, framesPerS
 		resolutionFlag = fmt.Sprintf("-s %dx%d", width, height)
 	}
 
-	_, err := execCommand(
+	_, err = execCommand(
 		fmt.Sprintf(`ffmpeg -y -ss %f -i '%s' -vframes %d -r %d %s %s`,
 			after.Seconds(), video, n, framesPerSecond, resolutionFlag, tmp))
 	if err != nil {
