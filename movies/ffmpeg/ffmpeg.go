@@ -1,10 +1,12 @@
 package ffmpeg
 
 import (
+	"bufio"
 	"fmt"
 	"image"
 	"image/gif"
 	"image/jpeg"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strconv"
@@ -112,6 +114,37 @@ func GIFCaptures(video string, after time.Duration, width, height, n, framesPerS
 	}
 
 	return g.Image, nil
+}
+
+// Generates webm sequence. Note ffmpeg must be built with libvpx to encode webm.
+func WebM(video string, after time.Duration, width, height, n, framesPerSecond int) ([]byte, error) {
+	uuid, err := uuid.NewV4()
+	if err != nil {
+		return nil, err
+	}
+	tmp := "/tmp/" + uuid.String() + ".webm"
+	defer os.Remove(tmp)
+
+	_, err = execCommand(
+		// -an: Remove audio
+		//   This allows autoplay on modern browsers, where
+		//   autoplay is disabled due to abuse by ads.
+		// -vf 'subtitles=%s': Burn in subtitles (TODO)
+		//   Problem, does not take time offset into account.
+		//   Possible fix is gen time shifted subs beforehand.
+		//   Documentation:
+		//   http://ffmpeg.org/ffmpeg-filters.html#subtitles-1
+		fmt.Sprintf(`ffmpeg -y -ss %f -i '%s' -an -vframes %d -r %d -s %dx%d %s`,
+			after.Seconds(), video, n, framesPerSecond, width, height, tmp))
+
+	f, err := os.Open(tmp)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	reader := bufio.NewReader(f)
+	return ioutil.ReadAll(reader)
 }
 
 func execCommand(cmdStr string) (string, error) {

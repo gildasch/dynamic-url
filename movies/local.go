@@ -69,6 +69,10 @@ func (l *Local) Frames(at time.Duration, n, framesPerSecond int) []image.Image {
 	return out
 }
 
+func (l *Local) WebM(at time.Duration, n, framesPerSecond int) ([]byte, error) {
+	return ffmpeg.WebM(l.video, at, l.width, l.height, n, framesPerSecond)
+}
+
 func (l *Local) Caption(at time.Duration) string {
 	return l.captions.At(at)
 }
