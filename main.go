@@ -88,7 +88,7 @@ func main() {
 				captions = subtitles
 			}
 
-			l, err := movies.NewLocal(name, mc.Movie, captions, 1024/2, 576/2)
+			l, err := movies.NewLocal(name, mc.Movie, mc.Subtitles, captions, 1024/2, 576/2)
 			if err != nil {
 				fmt.Println(err)
 				return

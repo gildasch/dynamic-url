@@ -15,7 +15,7 @@ func init() {
 }
 
 func TestLocal(t *testing.T) {
-	l, err := NewLocal("test", os.Getenv("FFMPEG_TEST_MOVIE"), nil, 1024, 576)
+	l, err := NewLocal("test", os.Getenv("FFMPEG_TEST_MOVIE"), "", nil, 1024, 576)
 	require.NoError(t, err)
 
 	assert.Equal(t, 1*time.Hour+11*time.Minute+46*time.Second, l.Duration())

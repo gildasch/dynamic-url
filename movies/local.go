@@ -12,6 +12,7 @@ import (
 type Local struct {
 	name          string
 	video         string
+	sub           string
 	captions      Captions
 	width, height int
 
@@ -23,7 +24,7 @@ type Captions interface {
 	Between(start, end time.Duration) []Caption
 }
 
-func NewLocal(name, video string, captions Captions, width, height int) (*Local, error) {
+func NewLocal(name, video, sub string, captions Captions, width, height int) (*Local, error) {
 	d, err := ffmpeg.Duration(video)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not inspect movie file %q", video)
@@ -32,6 +33,7 @@ func NewLocal(name, video string, captions Captions, width, height int) (*Local,
 	return &Local{
 		name:     name,
 		video:    video,
+		sub:      sub,
 		captions: captions,
 		width:    width,
 		height:   height,
@@ -70,7 +72,7 @@ func (l *Local) Frames(at time.Duration, n, framesPerSecond int) []image.Image {
 }
 
 func (l *Local) WebM(at time.Duration, n, framesPerSecond int) ([]byte, error) {
-	return ffmpeg.WebM(l.video, at, l.width, l.height, n, framesPerSecond)
+	return ffmpeg.WebM(l.video, l.sub, at, l.width, l.height, n, framesPerSecond)
 }
 
 func (l *Local) Caption(at time.Duration) string {
