@@ -100,6 +100,8 @@ func main() {
 		router.GET("/movies/:name/at/:at/1.jpg", movieHandler(ms, "jpg"))
 		router.GET("/movies/:name/at/:at/1.gif",
 			cache.CachePage(store, 365*24*time.Hour, movieHandler(ms, "gif")))
+		router.GET("/movies/:name/at/:at/1.webm",
+			cache.CachePage(store, 365*24*time.Hour, movieHandler(ms, "webm")))
 		router.GET("/movies/:name/all.html",
 			cache.CachePage(store, 365*24*time.Hour, movieAllHandler(ms, "gif")))
 		router.GET("/movies/:name/search.html",
@@ -278,6 +280,23 @@ func movieHandler(ms []movies.Movie, format string) func(c *gin.Context) {
 			}
 
 			c.Data(http.StatusOK, "image/gif", gif)
+			return
+		case "webm":
+			nframes := 50
+			if c.Query("frames") != "" {
+				i, err := strconv.Atoi(c.Query("frames"))
+				if err == nil && nframes <= 200 {
+					nframes = i
+				}
+			}
+
+			webm, err := movie.WebM(at, nframes*25/framesPerSecond, 25)
+			if err != nil {
+				c.Data(http.StatusInternalServerError, "video/webm", []byte{})
+				return
+			}
+
+			c.Data(http.StatusOK, "video/webm", webm)
 			return
 		}
 

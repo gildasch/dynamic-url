@@ -1,10 +1,12 @@
 package ffmpeg
 
 import (
+	"bufio"
 	"fmt"
 	"image"
 	"image/gif"
 	"image/jpeg"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strconv"
@@ -19,7 +21,7 @@ var Debug = false
 func Duration(video string) (time.Duration, error) {
 	// from https://superuser.com/questions/650291/how-to-get-video-duration-in-seconds
 	out, err := execCommand(
-		fmt.Sprintf(`ffmpeg -i '%s' 2>&1 | grep "Duration"| cut -d ' ' -f 4 | sed s/,// | sed 's@\..*@@g' | awk '{ split($1, A, ":"); split(A[3], B, "."); print 3600*A[1] + 60*A[2] + B[1] }'`, video))
+		fmt.Sprintf(`ffmpeg -i '%s' 2>&1 | awk -F[:.] '/Duration:/ {print $2*3600+$3*60+$4}'`, video))
 	if err != nil {
 		return 0, err
 	}
@@ -41,7 +43,11 @@ func Capture(video string, after time.Duration, width, height int) (image.Image,
 }
 
 func Captures(video string, after time.Duration, width, height, n int) ([]image.Image, error) {
-	tmp := "/tmp/" + uuid.NewV4().String() + "-%04d.jpg"
+	uuid, err := uuid.NewV4()
+	if err != nil {
+		return nil, err
+	}
+	tmp := "/tmp/" + uuid.String() + "-%04d.jpg"
 	fmt.Println("saving", n, tmp)
 	defer func() {
 		for i := 0; i < n; i++ {
@@ -54,7 +60,7 @@ func Captures(video string, after time.Duration, width, height, n int) ([]image.
 		resolutionFlag = fmt.Sprintf("-s %dx%d", width, height)
 	}
 
-	_, err := execCommand(
+	_, err = execCommand(
 		fmt.Sprintf(`ffmpeg -y -ss %f -i '%s' -vframes %d -r 5 %s %s`, after.Seconds(), video, n, resolutionFlag, tmp))
 	if err != nil {
 		return nil, err
@@ -77,7 +83,11 @@ func Captures(video string, after time.Duration, width, height, n int) ([]image.
 }
 
 func GIFCaptures(video string, after time.Duration, width, height, n, framesPerSecond int) ([]*image.Paletted, error) {
-	tmp := "/tmp/" + uuid.NewV4().String() + ".gif"
+	uuid, err := uuid.NewV4()
+	if err != nil {
+		return nil, err
+	}
+	tmp := "/tmp/" + uuid.String() + ".gif"
 	fmt.Println("saving", n, tmp)
 	defer os.Remove(tmp)
 
@@ -86,7 +96,7 @@ func GIFCaptures(video string, after time.Duration, width, height, n, framesPerS
 		resolutionFlag = fmt.Sprintf("-s %dx%d", width, height)
 	}
 
-	_, err := execCommand(
+	_, err = execCommand(
 		fmt.Sprintf(`ffmpeg -y -ss %f -i '%s' -vframes %d -r %d %s %s`,
 			after.Seconds(), video, n, framesPerSecond, resolutionFlag, tmp))
 	if err != nil {
@@ -104,6 +114,37 @@ func GIFCaptures(video string, after time.Duration, width, height, n, framesPerS
 	}
 
 	return g.Image, nil
+}
+
+// Generates webm sequence. Note ffmpeg must be built with libvpx to encode webm.
+func WebM(video string, after time.Duration, width, height, n, framesPerSecond int) ([]byte, error) {
+	uuid, err := uuid.NewV4()
+	if err != nil {
+		return nil, err
+	}
+	tmp := "/tmp/" + uuid.String() + ".webm"
+	defer os.Remove(tmp)
+
+	_, err = execCommand(
+		// -an: Remove audio
+		//   This allows autoplay on modern browsers, where
+		//   autoplay is disabled due to abuse by ads.
+		// -vf 'subtitles=%s': Burn in subtitles (TODO)
+		//   Problem, does not take time offset into account.
+		//   Possible fix is gen time shifted subs beforehand.
+		//   Documentation:
+		//   http://ffmpeg.org/ffmpeg-filters.html#subtitles-1
+		fmt.Sprintf(`ffmpeg -y -ss %f -i '%s' -an -vframes %d -r %d -s %dx%d %s`,
+			after.Seconds(), video, n, framesPerSecond, width, height, tmp))
+
+	f, err := os.Open(tmp)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	reader := bufio.NewReader(f)
+	return ioutil.ReadAll(reader)
 }
 
 func execCommand(cmdStr string) (string, error) {

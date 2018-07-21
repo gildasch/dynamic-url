@@ -10,6 +10,7 @@ type Movie interface {
 	Duration() time.Duration
 	Frame(at time.Duration) image.Image
 	Frames(at time.Duration, n, framesPerSecond int) []image.Image
+	WebM(at time.Duration, n, framesPerSecond int) ([]byte, error)
 	Caption(at time.Duration) string
 	CaptionBetween(start, end time.Duration) []Caption
 }
