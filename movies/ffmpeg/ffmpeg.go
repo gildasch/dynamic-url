@@ -117,7 +117,7 @@ func GIFCaptures(video string, after time.Duration, width, height, n, framesPerS
 }
 
 // Generates webm sequence. Note ffmpeg must be built with libvpx to encode webm.
-func WebM(video string, after time.Duration, width, height, n, framesPerSecond int) ([]byte, error) {
+func WebM(video, sub string, after time.Duration, width, height, n, framesPerSecond int) ([]byte, error) {
 	uuid, err := uuid.NewV4()
 	if err != nil {
 		return nil, err
@@ -125,17 +125,26 @@ func WebM(video string, after time.Duration, width, height, n, framesPerSecond i
 	tmp := "/tmp/" + uuid.String() + ".webm"
 	defer os.Remove(tmp)
 
+	// SubStation Alpha options (section V4+ styles) :
+	// https://en.wikipedia.org/wiki/SubStation_Alpha#Advanced_SubStation_Alpha
+	libAssOptions := "Fontname=LiberationSans,Fontsize=70"
+
+	// FFmpeg "subtitles" filter options :
+	// http://ffmpeg.org/ffmpeg-filters.html#subtitles-1
+	subFilterConf := fmt.Sprintf(`%s:fontsdir='%s':force_style='%s'`,
+		sub, "" /*TODO fontsdir*/, libAssOptions)
+
+	// FFmpeg trick to have proper subtitle alignment with time offset :
+	// https://implyingrigged.info/wiki/Creating_WebMs_with_FFmpeg#Hardsubbing
+	subFlag := fmt.Sprintf(`-copyts -vf "subtitles=%s,setpts=PTS-STARTPTS" -sn`,
+		subFilterConf)
+
 	_, err = execCommand(
 		// -an: Remove audio
-		//   This allows autoplay on modern browsers, where
-		//   autoplay is disabled due to abuse by ads.
-		// -vf 'subtitles=%s': Burn in subtitles (TODO)
-		//   Problem, does not take time offset into account.
-		//   Possible fix is gen time shifted subs beforehand.
-		//   Documentation:
-		//   http://ffmpeg.org/ffmpeg-filters.html#subtitles-1
-		fmt.Sprintf(`ffmpeg -y -ss %f -i '%s' -an -vframes %d -r %d -s %dx%d %s`,
-			after.Seconds(), video, n, framesPerSecond, width, height, tmp))
+		//   This allows autoplay on modern browsers, where autoplay
+		//   is disabled for videos with audio due to abuse by ads.
+		fmt.Sprintf(`ffmpeg -y -ss %f -i '%s' %s -an -vframes %d -r %d -s %dx%d %s`,
+			after.Seconds(), video, subFlag, n, framesPerSecond, width, height, tmp))
 
 	f, err := os.Open(tmp)
 	if err != nil {
