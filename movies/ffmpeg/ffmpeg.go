@@ -19,7 +19,7 @@ var Debug = false
 func Duration(video string) (time.Duration, error) {
 	// from https://superuser.com/questions/650291/how-to-get-video-duration-in-seconds
 	out, err := execCommand(
-		fmt.Sprintf(`ffmpeg -i '%s' 2>&1 | grep "Duration"| cut -d ' ' -f 4 | sed s/,// | sed 's@\..*@@g' | awk '{ split($1, A, ":"); split(A[3], B, "."); print 3600*A[1] + 60*A[2] + B[1] }'`, video))
+		fmt.Sprintf(`ffmpeg -i '%s' 2>&1 | awk -F[:.] '/Duration:/ {print $2*3600+$3*60+$4}'`, video))
 	if err != nil {
 		return 0, err
 	}
