@@ -7,9 +7,12 @@ import (
 	"image"
 	"image/jpeg"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
+	docker "docker.io/go-docker"
+	"github.com/gildasch/dynamic-url/faceswap"
 	"github.com/gildasch/dynamic-url/instagram"
 	"github.com/gildasch/dynamic-url/movies"
 	"github.com/gildasch/dynamic-url/movies/ffmpeg"
@@ -20,6 +23,7 @@ import (
 	"github.com/gin-contrib/cache"
 	"github.com/gin-contrib/cache/persistence"
 	"github.com/gin-gonic/gin"
+	uuid "github.com/satori/go.uuid"
 )
 
 const framesPerSecond = 5
@@ -97,11 +101,19 @@ func main() {
 			ms = append(ms, l)
 		}
 
-		router.GET("/movies/:name/at/:at/1.jpg", movieHandler(ms, "jpg"))
+		dockerClient, err := docker.NewEnvClient()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		fswap := &faceswap.Wuhuikais{Client: dockerClient}
+
+		router.GET("/movies/:name/at/:at/1.jpg", movieHandler(ms, fswap, "jpg"))
 		router.GET("/movies/:name/at/:at/1.gif",
-			cache.CachePage(store, 365*24*time.Hour, movieHandler(ms, "gif")))
+			cache.CachePage(store, 365*24*time.Hour, movieHandler(ms, fswap, "gif")))
 		router.GET("/movies/:name/at/:at/1.webm",
-			cache.CachePage(store, 365*24*time.Hour, movieHandler(ms, "webm")))
+			cache.CachePage(store, 365*24*time.Hour, movieHandler(ms, fswap, "webm")))
 		router.GET("/movies/:name/all.html",
 			cache.CachePage(store, 365*24*time.Hour, movieAllHandler(ms, "gif")))
 		router.GET("/movies/:name/search.html",
@@ -168,7 +180,7 @@ func instagramHandler(insta *instagram.Client, search string, format string) fun
 	}
 }
 
-func movieHandler(ms []movies.Movie, format string) func(c *gin.Context) {
+func movieHandler(ms []movies.Movie, fswap *faceswap.Wuhuikais, format string) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		name := c.Param("name")
 
@@ -213,6 +225,8 @@ func movieHandler(ms []movies.Movie, format string) func(c *gin.Context) {
 			c.Data(http.StatusOK, "image/jpeg", buf.Bytes())
 			return
 		case "gif":
+			gab := c.Query("gab") == "1"
+
 			nframes := 50
 			if c.Query("frames") != "" {
 				i, err := strconv.Atoi(c.Query("frames"))
@@ -221,7 +235,12 @@ func movieHandler(ms []movies.Movie, format string) func(c *gin.Context) {
 				}
 			}
 
-			frames := movie.Frames(at, nframes, framesPerSecond)
+			var frames []image.Image
+			if gab {
+				frames = movie.Frames(at, 1, framesPerSecond)
+			} else {
+				frames = movie.Frames(at, nframes, framesPerSecond)
+			}
 			var withCaption []image.Image
 
 			startTimeInMovie := at
@@ -253,7 +272,7 @@ func movieHandler(ms []movies.Movie, format string) func(c *gin.Context) {
 					}
 				}
 
-				if caption != previousCaption {
+				if !gab && caption != previousCaption {
 					at = timeInMovie
 					nframes = nframes - i
 					frames = movie.Frames(at, nframes, framesPerSecond)
@@ -261,6 +280,66 @@ func movieHandler(ms []movies.Movie, format string) func(c *gin.Context) {
 					i = -1
 					previousCaption = caption
 					continue
+				}
+
+				if gab {
+					// Faceswap
+					tmpImage, err := uuid.NewV4()
+					if err != nil {
+						fmt.Println(err)
+						c.Status(http.StatusInternalServerError)
+						return
+					}
+
+					tmp, err := os.Create("/tmp/" + tmpImage.String() + ".jpg")
+					if err != nil {
+						fmt.Println(err)
+						c.Status(http.StatusInternalServerError)
+						return
+					}
+
+					err = jpeg.Encode(tmp, f, &jpeg.Options{Quality: 90})
+					if err != nil {
+						fmt.Println(err)
+						c.Status(http.StatusInternalServerError)
+						return
+					}
+
+					err = tmp.Close()
+					if err != nil {
+						fmt.Println(err)
+						c.Status(http.StatusInternalServerError)
+						return
+					}
+
+					err = fswap.FaceSwap("/tmp", "gab2.jpg", tmpImage.String()+".jpg", tmpImage.String()+".jpg")
+					if err != nil {
+						fmt.Println(err)
+						c.Status(http.StatusInternalServerError)
+						return
+					}
+
+					tmp, err = os.Open("/tmp/" + tmpImage.String() + ".jpg")
+					if err != nil {
+						fmt.Println(err)
+						c.Status(http.StatusInternalServerError)
+						return
+					}
+
+					f, err = jpeg.Decode(tmp)
+					if err != nil {
+						fmt.Println(err)
+						c.Status(http.StatusInternalServerError)
+						return
+					}
+
+					// Get next frame
+					nextTimeInMovie := at + time.Duration(i+1)*time.Second/time.Duration(framesPerSecond)
+					if nextTimeInMovie <= endTimeInMovie {
+						at = nextTimeInMovie
+						frames = movie.Frames(at, 1, framesPerSecond)
+						i = -1
+					}
 				}
 
 				previousCaption = caption
