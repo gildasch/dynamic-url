@@ -305,6 +305,10 @@ func movieHandler(ms []movies.Movie, fswap *faceswap.Wuhuikais, format string) f
 						return
 					}
 
+					defer func() {
+						os.Remove("/tmp/" + tmpImage.String() + ".jpg")
+					}()
+
 					err = tmp.Close()
 					if err != nil {
 						fmt.Println(err)
