@@ -34,7 +34,7 @@ func (w *Wuhuikais) FaceSwap(dir, src, dst, out string) error {
 			Cmd: []string{
 				"--src", "/images/" + src,
 				"--dst", "/images/" + dst,
-				"--out", "/images/out.jpg", "--correct_color"},
+				"--out", "/images/" + out, "--correct_color"},
 		},
 		&container.HostConfig{
 			Mounts: []mount.Mount{
