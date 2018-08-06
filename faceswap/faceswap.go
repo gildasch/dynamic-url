@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"strings"
 	"time"
 
@@ -26,20 +25,15 @@ type Wuhuikais struct {
 	imageID string
 }
 
-func (w *Wuhuikais) FaceSwap() error {
+func (w *Wuhuikais) FaceSwap(dir, src, dst, out string) error {
 	containerID := fmt.Sprintf("faceswap_run_%d", time.Now().Unix())
 
-	dir, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	_, err = w.ContainerCreate(context.Background(),
+	_, err := w.ContainerCreate(context.Background(),
 		&container.Config{
 			Image: "faceswap:latest",
 			Cmd: []string{
-				"--dst", "/images/Rogelio.png",
-				"--src", "/images/gildas2.png",
+				"--src", "/images/" + src,
+				"--dst", "/images/" + dst,
 				"--out", "/images/out.jpg", "--correct_color"},
 		},
 		&container.HostConfig{

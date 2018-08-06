@@ -2,6 +2,7 @@ package faceswap
 
 import (
 	"io/ioutil"
+	"os"
 	"testing"
 
 	docker "docker.io/go-docker"
@@ -15,7 +16,10 @@ func TestFaceSwap(t *testing.T) {
 
 	w := Wuhuikais{Client: c}
 
-	err = w.FaceSwap()
+	dir, err := os.Getwd()
+	require.NoError(t, err)
+
+	err = w.FaceSwap(dir, "gildas2.png", "Rogelio.png", "out.jpg")
 	require.NoError(t, err)
 
 	actual, err := ioutil.ReadFile("out.jpg")
