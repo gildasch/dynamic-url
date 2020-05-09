@@ -95,7 +95,7 @@ func (c *Client) GetLatestPicturesFromUser(username string, n int) ([]string, er
 }
 
 func (c *Client) GetLatestPicturesFromTag(tag string, n int, maxWidth, maxHeight int) ([]string, error) {
-	feed, err := c.Search.FeedTags(tag)
+	feed, err := c.Feed.Tags(tag)
 	if err != nil {
 		return nil, err
 	}
